@@ -250,7 +250,16 @@
   </div>
 </div>
 
+<div id="fixedDbg" style="position:fixed;bottom:0;left:0;right:0;background:#1e293b;color:#fff;font-size:13px;font-weight:bold;text-align:center;padding:6px;z-index:9999;pointer-events:none;">JS起動待ち...</div>
 <script>
+// 最初に実行 - エラーがあってもここは動く
+window.onerror = function(msg,s,l){ document.getElementById('fixedDbg').textContent='JSエラー: '+msg+' L'+l; };
+['touchstart','mousedown','pointerdown'].forEach(function(ev) {
+  document.addEventListener(ev, function(e) {
+    var t = e.changedTouches ? e.changedTouches[0] : e;
+    document.getElementById('fixedDbg').textContent = ev+' on '+e.target.tagName+'#'+e.target.id+' ('+Math.round(t.clientX)+','+Math.round(t.clientY)+')';
+  }, { passive: true });
+});
 // ━━━ TOEIC 1000語 ━━━
 const TOEIC_WORDS = [
 ['abandon','放棄する'],['absorb','吸収する'],['accelerate','加速する'],['access','アクセスする'],
@@ -839,13 +848,6 @@ function clearCanvas() {
 function resizeCanvas() {}
 window.addEventListener('resize', function() {});
 
-// ドキュメントレベルでタッチを監視（デバッグ用）
-document.addEventListener('touchstart', function(e) {
-  if (!document.getElementById('studyTab').classList.contains('active')) return;
-  var t = e.changedTouches[0];
-  var dbg = document.getElementById('dbgBar');
-  if (dbg && t) dbg.textContent = 'DOC touch: ' + Math.round(t.clientX) + ',' + Math.round(t.clientY) + ' target=' + e.target.tagName + '#' + e.target.id;
-}, { passive: true });
 </script>
 </body>
 </html>
