@@ -532,7 +532,7 @@ function switchTab(tab) {
     if (btn) btn.classList.toggle('active', t === tab);
     document.getElementById(t + 'Tab').classList.toggle('active', t === tab);
   });
-  if (tab === 'study') { initStudy(); setTimeout(resizeCanvas, 30); }
+  if (tab === 'study') { initStudy(); requestAnimationFrame(() => requestAnimationFrame(resizeCanvas)); }
   if (tab === 'card')  initFC();
 }
 
@@ -760,7 +760,7 @@ function setupCanvas() {
 
   // キャンバスサイズをレイアウト変化に追従させる
   if (typeof ResizeObserver !== 'undefined') {
-    new ResizeObserver(() => { if (ctx) resizeCanvas(); }).observe(wrap);
+    new ResizeObserver(resizeCanvas).observe(wrap);
   }
 }
 function resizeCanvas() {
@@ -781,13 +781,15 @@ function pt(e) {
 }
 function onDown(e) {
   e.preventDefault();
-  try { canvas.setPointerCapture(e.pointerId); } catch(_) {} // iOSで失敗してもOK
+  if (!ctx) resizeCanvas();
+  if (!ctx) return;
+  try { canvas.setPointerCapture(e.pointerId); } catch(_) {}
   drawing = true; last = pt(e);
   ctx.beginPath(); ctx.arc(last.x, last.y, last.p * 2.5, 0, Math.PI*2);
   ctx.fillStyle = '#1a1a2e'; ctx.fill();
 }
 function onMove(e) {
-  if (!drawing) return; e.preventDefault();
+  if (!drawing || !ctx) return; e.preventDefault();
   const p = pt(e); ctx.lineWidth = p.p * 5 + 1.5;
   ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p;
 }
