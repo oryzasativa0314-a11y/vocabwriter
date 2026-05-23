@@ -751,19 +751,8 @@ function setupCanvas() {
   canvas.addEventListener('touchstart', function(e) {
     e.preventDefault();
     _touchActive = true;
-    // タッチ時点でキャンバスを強制初期化（CSSの高さ問題を回避）
-    var w = canvas.offsetWidth, h = canvas.offsetHeight;
-    if (!ctx || canvas.width === 0 || canvas.height === 0 || !w || !h) {
-      dpr = window.devicePixelRatio || 1;
-      if (w && h) {
-        canvas.width = w * dpr; canvas.height = h * dpr;
-        canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
-        ctx = canvas.getContext('2d');
-        ctx.scale(dpr, dpr); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#1a1a2e';
-      }
-    }
-    if (!ctx) return;
-    const t = e.touches[0];
+    if (!ensureCtx()) return;
+    const t = e.changedTouches[0];
     const r = canvas.getBoundingClientRect();
     drawing = true;
     last = { x: t.clientX - r.left, y: t.clientY - r.top };
@@ -806,6 +795,19 @@ function resizeCanvas() {
   ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#1a1a2e';
 }
+function ensureCtx() {
+  if (ctx && canvas.width > 0 && canvas.height > 0) return true;
+  const wrap = document.getElementById('canvasWrap');
+  const w = canvas.offsetWidth || wrap.offsetWidth;
+  const h = canvas.offsetHeight || wrap.offsetHeight;
+  if (!w || !h) return false;
+  dpr = window.devicePixelRatio || 1;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+  ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#1a1a2e';
+  return true;
+}
 function pt(e) {
   const r = canvas.getBoundingClientRect();
   const p = e.pointerType === 'mouse' ? 0.5 : (e.pressure > 0 ? e.pressure : 0.5);
@@ -814,8 +816,7 @@ function pt(e) {
 function onDown(e) {
   if (_touchActive || e.pointerType === 'touch') return;
   e.preventDefault();
-  if (!ctx) resizeCanvas();
-  if (!ctx) return;
+  if (!ensureCtx()) return;
   try { canvas.setPointerCapture(e.pointerId); } catch(_) {}
   drawing = true; last = pt(e);
   ctx.beginPath(); ctx.arc(last.x, last.y, last.p * 2.5, 0, Math.PI * 2);
