@@ -255,10 +255,19 @@
 <script>
 // 最初に実行 - エラーがあってもここは動く
 window.onerror = function(msg,s,l){ document.getElementById('fixedDbg').textContent='JSエラー: '+msg+' L'+l; };
+var _dbgMoveCount = 0;
 ['touchstart','mousedown','pointerdown'].forEach(function(ev) {
   document.addEventListener(ev, function(e) {
+    _dbgMoveCount = 0;
     var t = e.changedTouches ? e.changedTouches[0] : e;
-    document.getElementById('fixedDbg').textContent = ev+' on '+e.target.tagName+'#'+e.target.id+' ('+Math.round(t.clientX)+','+Math.round(t.clientY)+')';
+    document.getElementById('fixedDbg').textContent = ev+' '+e.pointerType+' on '+e.target.tagName+'#'+e.target.id;
+  }, { passive: true });
+});
+['touchmove','mousemove','pointermove'].forEach(function(ev) {
+  document.addEventListener(ev, function(e) {
+    if (ev==='mousemove' && e.buttons===0) return;
+    _dbgMoveCount++;
+    document.getElementById('fixedDbg').textContent = ev+'×'+_dbgMoveCount;
   }, { passive: true });
 });
 // ━━━ TOEIC 1000語 ━━━
@@ -819,6 +828,11 @@ function runDiag() {
 function startStroke(clientX, clientY) {
   const r = drawSvg.getBoundingClientRect();
   const x = (clientX - r.left).toFixed(1), y = (clientY - r.top).toFixed(1);
+  // タップだけでも見えるように点を描く
+  var dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  dot.setAttribute('cx', x); dot.setAttribute('cy', y);
+  dot.setAttribute('r', '3'); dot.setAttribute('fill', '#1a1a2e');
+  drawSvg.appendChild(dot);
   currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   currentPath.setAttribute('stroke', '#1a1a2e');
   currentPath.setAttribute('stroke-width', '3');
