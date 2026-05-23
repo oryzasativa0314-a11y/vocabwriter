@@ -91,7 +91,7 @@
     .dot.done { background:var(--primary); } .dot.current { background:rgba(59,130,246,.45); transform:scale(1.3); }
     .attempt-label { font-size:13px; color:var(--text2); font-weight:500; }
     .canvas-wrap { flex:1; min-height:0; margin:0 20px; border-radius:var(--r); overflow:hidden; position:relative; background:#fafafa; border:1px solid var(--border); background-image:repeating-linear-gradient(to bottom,transparent,transparent calc(100%/7 - 1px),rgba(59,130,246,.12) calc(100%/7 - 1px),rgba(59,130,246,.12) calc(100%/7)); touch-action:none; cursor:crosshair; }
-    #drawSvg { position:absolute; inset:0; width:100%; height:100%; overflow:hidden; pointer-events:none; }
+    #drawCanvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
     .study-btns { display:flex; justify-content:center; gap:16px; padding:14px 20px; flex-shrink:0; }
     .shuffle-btn { background:transparent; border:1.5px solid var(--border); border-radius:8px; padding:5px 12px; font-size:13px; font-weight:600; color:var(--text2); cursor:pointer; display:flex; align-items:center; gap:6px; transition:all .2s; }
     .shuffle-btn.on { border-color:var(--primary); color:var(--primary); background:rgba(59,130,246,.07); }
@@ -208,7 +208,7 @@
           <div class="dots" id="dots"></div>
           <div class="attempt-label" id="attemptLabel"></div>
         </div>
-        <div class="canvas-wrap" id="canvasWrap"><svg id="drawSvg" xmlns="http://www.w3.org/2000/svg"></svg></div>
+        <div class="canvas-wrap" id="canvasWrap"><canvas id="drawCanvas"></canvas></div>
         <div id="dbgBar" style="text-align:center;font-size:12px;color:#888;padding:2px 0;flex-shrink:0;">待機中</div>
         <div class="study-btns">
           <button class="btn btn-orange btn-lg" onclick="clearCanvas()">🗑 消去</button>
@@ -759,109 +759,110 @@ function toggleShuffle() {
   if (document.getElementById('studyTab').classList.contains('active')) { renderStudy(); clearCanvas(); }
 }
 
-// ━━━ Drawing (SVG) ━━━
-let drawSvg, currentPath = null, pathData = '', _touchActive = false;
+// ━━━ Canvas Drawing ━━━
+let canvas, ctx, drawing = false, lastX = 0, lastY = 0;
 
 function setupCanvas() {
-  drawSvg = document.getElementById('drawSvg');
+  canvas = document.getElementById('drawCanvas');
   const wrap = document.getElementById('canvasWrap');
-  // SVGはレンダリング専用。イベントはHTMLのwrapで受け取る
-  drawSvg.style.pointerEvents = 'none';
   wrap.style.touchAction = 'none';
 
-  function dbg(msg) { var el = document.getElementById('dbgBar'); if (el) el.textContent = msg; }
+  function initCtx() {
+    const w = wrap.offsetWidth, h = wrap.offsetHeight;
+    if (!w || !h) return false;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+    ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.strokeStyle = '#1a1a2e'; ctx.fillStyle = '#1a1a2e';
+    ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    return true;
+  }
 
+  function getPos(clientX, clientY) {
+    const r = wrap.getBoundingClientRect();
+    return { x: clientX - r.left, y: clientY - r.top };
+  }
+
+  function penDown(clientX, clientY) {
+    if (!ctx) initCtx();
+    if (!ctx) return;
+    const p = getPos(clientX, clientY);
+    drawing = true; lastX = p.x; lastY = p.y;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI*2); ctx.fill();
+  }
+
+  function penMove(clientX, clientY) {
+    if (!drawing || !ctx) return;
+    const p = getPos(clientX, clientY);
+    ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke();
+    lastX = p.x; lastY = p.y;
+  }
+
+  function penUp() { drawing = false; }
+
+  // Touch events (canvasWrapで受け取る)
   wrap.addEventListener('touchstart', function(e) {
     e.preventDefault();
-    _touchActive = true;
-    var t = e.changedTouches[0];
-    if (!t) return;
-    dbg('touch! x=' + Math.round(t.clientX) + ' y=' + Math.round(t.clientY));
-    startStroke(t.clientX, t.clientY);
+    var t = e.changedTouches[0]; if (!t) return;
+    penDown(t.clientX, t.clientY);
   }, { passive: false });
-
   wrap.addEventListener('touchmove', function(e) {
     e.preventDefault();
-    var t = e.changedTouches[0];
-    if (!t || !currentPath) return;
-    extendStroke(t.clientX, t.clientY);
+    var t = e.changedTouches[0]; if (!t) return;
+    penMove(t.clientX, t.clientY);
   }, { passive: false });
+  wrap.addEventListener('touchend',    penUp);
+  wrap.addEventListener('touchcancel', penUp);
 
-  wrap.addEventListener('touchend',    function() { endStroke(); setTimeout(function() { _touchActive = false; }, 50); });
-  wrap.addEventListener('touchcancel', function() { endStroke(); setTimeout(function() { _touchActive = false; }, 50); });
-
+  // Pointer events (mouse/Apple Pencil)
   wrap.addEventListener('pointerdown', function(e) {
     if (e.pointerType === 'touch') return;
-    e.preventDefault();
-    dbg('pen! type=' + e.pointerType + ' x=' + Math.round(e.clientX));
-    startStroke(e.clientX, e.clientY);
+    e.preventDefault(); penDown(e.clientX, e.clientY);
   });
   wrap.addEventListener('pointermove', function(e) {
-    if (e.pointerType === 'touch' || !currentPath) return;
-    e.preventDefault();
-    extendStroke(e.clientX, e.clientY);
+    if (e.pointerType === 'touch') return;
+    e.preventDefault(); penMove(e.clientX, e.clientY);
   });
-  wrap.addEventListener('pointerup',     function(e) { if (e.pointerType !== 'touch') endStroke(); });
-  wrap.addEventListener('pointercancel', function(e) { if (e.pointerType !== 'touch') endStroke(); });
+  wrap.addEventListener('pointerup',     function(e) { if (e.pointerType !== 'touch') penUp(); });
+  wrap.addEventListener('pointercancel', function(e) { if (e.pointerType !== 'touch') penUp(); });
+
+  initCtx();
 }
 
 function runDiag() {
-  var svg = document.getElementById('drawSvg');
-  var wrap = document.getElementById('canvasWrap');
-  var sr = svg ? svg.getBoundingClientRect() : null;
-  var wr = wrap ? wrap.getBoundingClientRect() : null;
-  var msg = 'SVG: ' + (sr ? Math.round(sr.width) + 'x' + Math.round(sr.height) : 'not found') +
-            '\nWrap: ' + (wr ? Math.round(wr.width) + 'x' + Math.round(wr.height) : 'not found');
-  // Draw a red test line directly in SVG coordinates
-  if (svg) {
-    var line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    line.setAttribute('stroke', 'red');
-    line.setAttribute('stroke-width', '6');
-    line.setAttribute('fill', 'none');
-    line.setAttribute('d', 'M 20 20 L 120 80 L 220 20');
-    svg.appendChild(line);
-    msg += '\n赤い線が見えますか？';
+  const wrap = document.getElementById('canvasWrap');
+  const wr = wrap ? wrap.getBoundingClientRect() : null;
+  let msg = 'Canvas: ' + (canvas ? canvas.width + 'x' + canvas.height : 'null') +
+            '\nWrap: ' + (wr ? Math.round(wr.width) + 'x' + Math.round(wr.height) : '?') +
+            '\nctx: ' + (ctx ? 'OK' : 'null');
+  if (ctx) {
+    ctx.fillStyle = 'red'; ctx.fillRect(10, 10, 80, 80);
+    msg += '\n赤い四角が見えますか？';
   }
   alert(msg);
 }
 
-function startStroke(clientX, clientY) {
-  const r = drawSvg.getBoundingClientRect();
-  const x = (clientX - r.left).toFixed(1), y = (clientY - r.top).toFixed(1);
-  // タップだけでも見えるように点を描く
-  var dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-  dot.setAttribute('cx', x); dot.setAttribute('cy', y);
-  dot.setAttribute('r', '3'); dot.setAttribute('fill', '#1a1a2e');
-  drawSvg.appendChild(dot);
-  currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  currentPath.setAttribute('stroke', '#1a1a2e');
-  currentPath.setAttribute('stroke-width', '3');
-  currentPath.setAttribute('fill', 'none');
-  currentPath.setAttribute('stroke-linecap', 'round');
-  currentPath.setAttribute('stroke-linejoin', 'round');
-  pathData = 'M ' + x + ' ' + y;
-  currentPath.setAttribute('d', pathData);
-  drawSvg.appendChild(currentPath);
-}
-
-function extendStroke(clientX, clientY) {
-  if (!currentPath) return;
-  const r = drawSvg.getBoundingClientRect();
-  const x = (clientX - r.left).toFixed(1), y = (clientY - r.top).toFixed(1);
-  pathData += ' L ' + x + ' ' + y;
-  currentPath.setAttribute('d', pathData);
-}
-
-function endStroke() { currentPath = null; pathData = ''; }
-
 function clearCanvas() {
-  if (!drawSvg) return;
-  var children = Array.from(drawSvg.children);
-  children.forEach(function(c) { if (c.id !== 'svgBg') drawSvg.removeChild(c); });
+  if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-function resizeCanvas() {}
-window.addEventListener('resize', function() {});
+function resizeCanvas() {
+  if (!canvas || !ctx) return;
+  const wrap = document.getElementById('canvasWrap');
+  const w = wrap.offsetWidth, h = wrap.offsetHeight;
+  if (!w || !h) return;
+  const dpr = window.devicePixelRatio || 1;
+  const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+  ctx.scale(dpr, dpr);
+  ctx.strokeStyle = '#1a1a2e'; ctx.fillStyle = '#1a1a2e';
+  ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.putImageData(img, 0, 0);
+}
+window.addEventListener('resize', resizeCanvas);
 
 </script>
 </body>
