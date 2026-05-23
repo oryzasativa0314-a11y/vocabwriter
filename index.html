@@ -126,7 +126,7 @@
 <div id="app">
   <header>
     <div class="header-top">
-      <span class="app-title">✏️ 英単語ライター <span style="font-size:10px;opacity:0.4;font-weight:400">v10</span></span>
+      <span class="app-title">✏️ 英単語ライター</span>
       <button class="shuffle-btn" id="shuffleBtn" onclick="toggleShuffle()">🔀 <span id="shuffleLabel">シャッフルOFF</span></button>
     </div>
     <div class="tabs">
@@ -209,13 +209,9 @@
           <div class="attempt-label" id="attemptLabel"></div>
         </div>
         <div class="canvas-wrap" id="canvasWrap"><canvas id="drawCanvas"></canvas></div>
-        <div id="dbgBar" style="text-align:center;font-size:12px;color:#888;padding:2px 0;flex-shrink:0;">待機中</div>
         <div class="study-btns">
           <button class="btn btn-orange btn-lg" onclick="clearCanvas()">🗑 消去</button>
           <button class="btn btn-primary btn-lg" id="nextBtn" onclick="nextAttempt()"></button>
-        </div>
-        <div style="text-align:center;padding:4px 0 8px;flex-shrink:0;">
-          <button onclick="runDiag()" style="background:#ef4444;color:white;border:none;border-radius:8px;padding:8px 20px;font-size:14px;font-weight:700;">🔴 診断ボタン（タップ）</button>
         </div>
       </div>
       <div id="noStudy" style="display:none">
@@ -251,25 +247,7 @@
   </div>
 </div>
 
-<div id="fixedDbg" style="position:fixed;bottom:0;left:0;right:0;background:#1e293b;color:#fff;font-size:13px;font-weight:bold;text-align:center;padding:6px;z-index:9999;pointer-events:none;">JS起動待ち...</div>
 <script>
-// 最初に実行 - エラーがあってもここは動く
-window.onerror = function(msg,s,l){ document.getElementById('fixedDbg').textContent='JSエラー: '+msg+' L'+l; };
-var _dbgMoveCount = 0;
-['touchstart','mousedown','pointerdown'].forEach(function(ev) {
-  document.addEventListener(ev, function(e) {
-    _dbgMoveCount = 0;
-    var t = e.changedTouches ? e.changedTouches[0] : e;
-    document.getElementById('fixedDbg').textContent = ev+' '+e.pointerType+' on '+e.target.tagName+'#'+e.target.id;
-  }, { passive: true });
-});
-['touchmove','mousemove','pointermove'].forEach(function(ev) {
-  document.addEventListener(ev, function(e) {
-    if (ev==='mousemove' && e.buttons===0) return;
-    _dbgMoveCount++;
-    document.getElementById('fixedDbg').textContent = ev+'×'+_dbgMoveCount;
-  }, { passive: true });
-});
 // ━━━ TOEIC 1000語 ━━━
 const TOEIC_WORDS = [
 ['abandon','放棄する'],['absorb','吸収する'],['accelerate','加速する'],['access','アクセスする'],
@@ -318,7 +296,7 @@ const TOEIC_WORDS = [
 ['compliance','コンプライアンス'],['comprehensive','包括的な'],['concern','懸念、関心'],
 ['conclusion','結論'],['conference','会議'],['confidential','機密の'],
 ['consolidate','統合する、強固にする'],['construction','建設'],['cooperation','協力'],
-['corporate','企業の'],['cost','費用、コスト'],['courier','宅配便、配達員'],
+['cost','費用、コスト'],['courier','宅配便、配達員'],
 ['current','現在の'],['currency','通貨'],['customer','顧客'],['criteria','基準（複数）'],
 ['deadline','締め切り'],['decline','断る、減少する'],['dedicate','捧げる、専念する'],
 ['defer','延期する'],['delegate','委任する、代理人'],['deliver','配達する'],
@@ -799,7 +777,6 @@ function penUp() { drawing = false; }
 function setupCanvas() {
   canvas = document.getElementById('drawCanvas');
   const wrap = document.getElementById('canvasWrap');
-  wrap.style.touchAction = 'none';
 
   wrap.addEventListener('touchstart', function(e) {
     e.preventDefault();
@@ -824,20 +801,6 @@ function setupCanvas() {
   });
   wrap.addEventListener('pointerup',     function(e) { if (e.pointerType !== 'touch') penUp(); });
   wrap.addEventListener('pointercancel', function(e) { if (e.pointerType !== 'touch') penUp(); });
-}
-
-function runDiag() {
-  if (!ctx) initCtx();
-  const wrap = document.getElementById('canvasWrap');
-  const wr = wrap ? wrap.getBoundingClientRect() : null;
-  let msg = 'Canvas: ' + (canvas ? canvas.width + 'x' + canvas.height : 'null') +
-            '\nWrap: ' + (wr ? Math.round(wr.width) + 'x' + Math.round(wr.height) : '?') +
-            '\nctx: ' + (ctx ? 'OK' : 'null');
-  if (ctx) {
-    ctx.fillStyle = 'red'; ctx.fillRect(10, 10, 80, 80);
-    msg += '\n赤い四角が見えますか？';
-  }
-  alert(msg);
 }
 
 function clearCanvas() {
