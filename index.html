@@ -738,27 +738,49 @@ function toggleShuffle() {
 
 // ━━━ Canvas ━━━
 let canvas, ctx, drawing = false, last = null, dpr = 1;
+let _touchActive = false;
+
 function setupCanvas() {
   canvas = document.getElementById('drawCanvas');
   const wrap = document.getElementById('canvasWrap');
-
-  // iOSではCSSだけでは不十分なのでJSでも設定
   canvas.style.touchAction = 'none';
   wrap.style.touchAction   = 'none';
-
   resizeCanvas();
 
-  // Pointer Events（デスクトップ・Apple Pencil対応）
+  // タッチイベント（iOS: 指 + Apple Pencil 両対応）
+  canvas.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    _touchActive = true;
+    if (!ctx) resizeCanvas();
+    if (!ctx) return;
+    const t = e.touches[0];
+    const r = canvas.getBoundingClientRect();
+    drawing = true;
+    last = { x: t.clientX - r.left, y: t.clientY - r.top };
+    ctx.beginPath(); ctx.arc(last.x, last.y, 1.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#1a1a2e'; ctx.fill();
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+    if (!drawing || !ctx) return;
+    const t = e.touches[0];
+    const r = canvas.getBoundingClientRect();
+    const nx = t.clientX - r.left, ny = t.clientY - r.top;
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(nx, ny); ctx.stroke();
+    last = { x: nx, y: ny };
+  }, { passive: false });
+
+  canvas.addEventListener('touchend',    function() { drawing = false; last = null; setTimeout(function() { _touchActive = false; }, 50); });
+  canvas.addEventListener('touchcancel', function() { drawing = false; last = null; setTimeout(function() { _touchActive = false; }, 50); });
+
+  // ポインターイベント（デスクトップマウス用。タッチ中は無視）
   canvas.addEventListener('pointerdown',   onDown);
   canvas.addEventListener('pointermove',   onMove);
   canvas.addEventListener('pointerup',     onUp);
   canvas.addEventListener('pointercancel', onUp);
 
-  // iOS Safariでスクロールを止める（passive:falseが必須）
-  canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
-  canvas.addEventListener('touchmove',  e => e.preventDefault(), { passive: false });
-
-  // キャンバスサイズをレイアウト変化に追従させる
   if (typeof ResizeObserver !== 'undefined') {
     new ResizeObserver(resizeCanvas).observe(wrap);
   }
@@ -780,22 +802,27 @@ function pt(e) {
   return { x: e.clientX - r.left, y: e.clientY - r.top, p };
 }
 function onDown(e) {
+  if (_touchActive || e.pointerType === 'touch') return;
   e.preventDefault();
   if (!ctx) resizeCanvas();
   if (!ctx) return;
   try { canvas.setPointerCapture(e.pointerId); } catch(_) {}
   drawing = true; last = pt(e);
-  ctx.beginPath(); ctx.arc(last.x, last.y, last.p * 2.5, 0, Math.PI*2);
+  ctx.beginPath(); ctx.arc(last.x, last.y, last.p * 2.5, 0, Math.PI * 2);
   ctx.fillStyle = '#1a1a2e'; ctx.fill();
 }
 function onMove(e) {
-  if (!drawing || !ctx) return; e.preventDefault();
+  if (_touchActive || e.pointerType === 'touch' || !drawing || !ctx) return;
+  e.preventDefault();
   const p = pt(e); ctx.lineWidth = p.p * 5 + 1.5;
   ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p;
 }
-function onUp() { drawing = false; last = null; }
-function clearCanvas() { if (!ctx) return; ctx.clearRect(0, 0, canvas.width/dpr, canvas.height/dpr); }
-window.addEventListener('resize', () => {
+function onUp(e) {
+  if (_touchActive || (e && e.pointerType === 'touch')) return;
+  drawing = false; last = null;
+}
+function clearCanvas() { if (!ctx) return; ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr); }
+window.addEventListener('resize', function() {
   if (document.getElementById('studyTab').classList.contains('active')) resizeCanvas();
 });
 </script>
