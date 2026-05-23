@@ -90,7 +90,7 @@
     .dot.done { background:var(--primary); } .dot.current { background:rgba(59,130,246,.45); transform:scale(1.3); }
     .attempt-label { font-size:13px; color:var(--text2); font-weight:500; }
     .canvas-wrap { flex:1; min-height:0; margin:0 20px; border-radius:var(--r); overflow:hidden; position:relative; background:#fafafa; border:1px solid var(--border); background-image:repeating-linear-gradient(to bottom,transparent,transparent calc(100%/7 - 1px),rgba(59,130,246,.12) calc(100%/7 - 1px),rgba(59,130,246,.12) calc(100%/7)); touch-action:none; cursor:crosshair; }
-    #drawSvg { position:absolute; inset:0; width:100%; height:100%; touch-action:none; overflow:hidden; }
+    #drawSvg { position:absolute; inset:0; width:100%; height:100%; touch-action:none; overflow:hidden; pointer-events:all; }
     .study-btns { display:flex; justify-content:center; gap:16px; padding:14px 20px; flex-shrink:0; }
     .shuffle-btn { background:transparent; border:1.5px solid var(--border); border-radius:8px; padding:5px 12px; font-size:13px; font-weight:600; color:var(--text2); cursor:pointer; display:flex; align-items:center; gap:6px; transition:all .2s; }
     .shuffle-btn.on { border-color:var(--primary); color:var(--primary); background:rgba(59,130,246,.07); }
@@ -747,7 +747,14 @@ function setupCanvas() {
   drawSvg = document.getElementById('drawSvg');
   const wrap = document.getElementById('canvasWrap');
   drawSvg.style.touchAction = 'none';
+  drawSvg.style.pointerEvents = 'all';
   wrap.style.touchAction = 'none';
+  // 透明な背景rectでタッチエリアを確保
+  var bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%');
+  bg.setAttribute('fill', 'transparent');
+  bg.id = 'svgBg';
+  drawSvg.appendChild(bg);
 
   function dbg(msg) { var el = document.getElementById('dbgBar'); if (el) el.textContent = msg; }
 
@@ -830,7 +837,9 @@ function extendStroke(clientX, clientY) {
 function endStroke() { currentPath = null; pathData = ''; }
 
 function clearCanvas() {
-  if (drawSvg) while (drawSvg.firstChild) drawSvg.removeChild(drawSvg.firstChild);
+  if (!drawSvg) return;
+  var children = Array.from(drawSvg.children);
+  children.forEach(function(c) { if (c.id !== 'svgBg') drawSvg.removeChild(c); });
 }
 
 function resizeCanvas() {}
