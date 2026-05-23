@@ -5,140 +5,147 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>英単語ライター</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
     :root {
-      --primary: #3b82f6; --primary-dk: #2563eb;
-      --success: #10b981; --danger: #ef4444; --orange: #f97316;
-      --bg: #f1f5f9; --card: #ffffff; --text: #1e293b; --text2: #64748b;
-      --border: #e2e8f0; --shadow: 0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06); --r: 12px;
+      --primary:#4f46e5; --primary-dk:#3730a3; --primary-lt:#e0e7ff;
+      --accent:#7c3aed; --success:#059669; --danger:#ef4444; --orange:#ea580c;
+      --bg:#eef0fb; --card:#ffffff; --text:#0f172a; --text2:#64748b;
+      --border:#dde5f4; --shadow:0 2px 8px rgba(49,46,129,.08);
+      --shadow-lg:0 8px 32px rgba(49,46,129,.14); --r:14px;
+      --hdr:linear-gradient(135deg,#4338ca 0%,#7c3aed 100%);
     }
     html,body { height:100%; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); overflow:hidden; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
-    input, textarea { -webkit-user-select:text; user-select:text; }
+    input,textarea { -webkit-user-select:text; user-select:text; }
     #app { display:flex; flex-direction:column; height:100dvh; }
-    header { background:var(--card); border-bottom:1px solid var(--border); padding:0 20px; flex-shrink:0; }
-    .header-top { display:flex; align-items:center; justify-content:space-between; padding:10px 0 6px; }
-    .app-title { font-size:20px; font-weight:800; }
+
+    /* ─── Header ─── */
+    header { background:var(--hdr); border-bottom:none; padding:0 16px; flex-shrink:0; box-shadow:0 4px 20px rgba(67,56,202,.35); }
+    .header-top { display:flex; align-items:center; justify-content:space-between; padding:10px 0 6px; gap:8px; }
+    .app-title { font-size:20px; font-weight:800; color:#fff; text-shadow:0 1px 6px rgba(0,0,0,.2); flex-shrink:0; }
+    .header-controls { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+    .mute-btn { width:34px; height:34px; border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.15); border-radius:50%; font-size:16px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; color:#fff; transition:all .2s; flex-shrink:0; -webkit-user-select:none; }
+    .mute-btn.muted { background:rgba(239,68,68,.4); border-color:rgba(239,68,68,.6); }
+    .shuffle-btn { background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); border-radius:20px; padding:5px 12px; font-size:13px; font-weight:600; color:rgba(255,255,255,.85); cursor:pointer; display:flex; align-items:center; gap:6px; transition:all .2s; white-space:nowrap; }
+    .shuffle-btn.on { background:rgba(255,255,255,.3); border-color:rgba(255,255,255,.55); color:#fff; }
     .tabs { display:flex; gap:2px; }
-    .tab-btn { padding:8px 18px; border:none; background:transparent; border-bottom:3px solid transparent; font-size:14px; font-weight:500; color:var(--text2); cursor:pointer; transition:all .2s; white-space:nowrap; }
-    .tab-btn.active { color:var(--primary); border-bottom-color:var(--primary); }
+    .tab-btn { padding:8px 16px; border:none; background:transparent; border-bottom:3px solid transparent; font-size:14px; font-weight:600; color:rgba(255,255,255,.6); cursor:pointer; transition:all .2s; white-space:nowrap; }
+    .tab-btn.active { color:#fff; border-bottom-color:rgba(255,255,255,.9); }
     #content { flex:1; overflow:hidden; display:flex; flex-direction:column; }
     .tab-panel { display:none; flex:1; min-height:0; flex-direction:column; overflow-y:auto; }
     .tab-panel.active { display:flex; }
 
-    /* Buttons */
-    .btn { padding:10px 18px; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:filter .15s,background .15s; white-space:nowrap; }
-    .btn:hover { filter:brightness(1.08); } .btn:active { filter:brightness(.95); }
-    .btn-primary  { background:var(--primary);  color:#fff; }
-    .btn-success  { background:var(--success);  color:#fff; }
-    .btn-orange   { background:var(--orange);   color:#fff; }
-    .btn-outline  { background:transparent; color:var(--text2); border:1px solid var(--border); }
-    .btn-red-soft { background:#fee2e2; color:var(--danger); border:none; }
-    .btn-grn-soft { background:#d1fae5; color:var(--success); border:none; }
-    .btn-lg { padding:14px 28px; font-size:16px; border-radius:10px; min-width:140px; justify-content:center; }
+    /* ─── Buttons ─── */
+    .btn { padding:10px 18px; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all .15s; white-space:nowrap; }
+    .btn:active { transform:scale(.96); }
+    .btn-primary { background:linear-gradient(135deg,#4f46e5,#6366f1); color:#fff; box-shadow:0 3px 12px rgba(79,70,229,.45); }
+    .btn-success { background:linear-gradient(135deg,#059669,#10b981); color:#fff; box-shadow:0 3px 12px rgba(5,150,105,.4); }
+    .btn-orange  { background:linear-gradient(135deg,#ea580c,#f97316); color:#fff; box-shadow:0 3px 12px rgba(234,88,12,.4); }
+    .btn-outline { background:rgba(255,255,255,.7); color:var(--text2); border:1.5px solid var(--border); }
+    .btn-red-soft { background:linear-gradient(135deg,#fee2e2,#fecaca); color:#b91c1c; border:none; }
+    .btn-grn-soft { background:linear-gradient(135deg,#d1fae5,#a7f3d0); color:#065f46; border:none; }
+    .btn-lg { padding:14px 28px; font-size:16px; border-radius:12px; min-width:140px; justify-content:center; }
     .icon-btn { width:34px; height:34px; border:none; background:transparent; border-radius:8px; cursor:pointer; font-size:15px; color:var(--text2); transition:background .15s; }
     .icon-btn:hover { background:var(--bg); }
     .icon-btn.del:hover { background:#fee2e2; }
 
-    /* List tab */
+    /* ─── List tab ─── */
     .list-toolbar { padding:12px 20px 8px; display:flex; gap:8px; flex-shrink:0; }
-    .search-input { flex:1; padding:9px 14px; border:1px solid var(--border); border-radius:8px; font-size:15px; background:var(--card); outline:none; transition:border-color .2s; }
+    .search-input { flex:1; padding:9px 14px; border:1.5px solid var(--border); border-radius:10px; font-size:15px; background:var(--card); outline:none; transition:border-color .2s; box-shadow:var(--shadow); }
     .search-input:focus { border-color:var(--primary); }
-    .word-list { flex:1; padding:0 20px 24px; display:flex; flex-direction:column; gap:8px; }
-    .word-count { font-size:13px; color:var(--text2); padding:2px 0 6px; }
-    .word-card { background:var(--card); border-radius:var(--r); padding:12px 16px; display:flex; align-items:center; gap:12px; box-shadow:var(--shadow); border:1px solid var(--border); }
-    .word-english { font-size:17px; font-weight:600; }
+    .word-list { flex:1; padding:0 16px 24px; display:flex; flex-direction:column; gap:8px; overflow-y:auto; }
+    .word-count { font-size:13px; color:var(--text2); padding:4px 4px 6px; font-weight:600; }
+    .word-card { background:var(--card); border-radius:var(--r); padding:12px 16px; display:flex; align-items:center; gap:12px; box-shadow:var(--shadow); border:1px solid var(--border); transition:transform .15s,box-shadow .15s; }
+    .word-card:active { transform:scale(.99); box-shadow:none; }
+    .word-english { font-size:17px; font-weight:700; color:var(--text); }
     .word-japanese { font-size:13px; color:var(--text2); margin-top:2px; }
     .word-actions { display:flex; gap:4px; flex-shrink:0; }
+    .pos-tag { margin-left:7px; font-size:10px; font-weight:700; color:var(--primary); background:var(--primary-lt); border:1px solid rgba(79,70,229,.2); border-radius:10px; padding:1px 7px; vertical-align:middle; letter-spacing:.02em; }
     .empty-state { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--text2); padding:40px; text-align:center; }
-    .empty-icon { font-size:56px; opacity:.4; }
-    .empty-title { font-size:18px; font-weight:600; color:var(--text); }
+    .empty-icon { font-size:56px; opacity:.35; }
+    .empty-title { font-size:18px; font-weight:700; color:var(--text); }
 
-    /* ── Flashcard tab ── */
+    /* ─── Flashcard ─── */
     #cardTab { overflow:hidden; }
     #cardInner2 { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
-    .fc-toolbar { display:flex; align-items:center; gap:10px; padding:10px 20px; border-bottom:1px solid var(--border); background:var(--card); flex-shrink:0; flex-wrap:wrap; }
-    .fc-stats { font-size:13px; font-weight:600; color:var(--text2); flex:1; }
+    .fc-toolbar { display:flex; align-items:center; gap:10px; padding:10px 16px; border-bottom:1px solid var(--border); background:var(--card); flex-shrink:0; flex-wrap:wrap; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+    .fc-stats { font-size:13px; font-weight:700; color:var(--text2); flex:1; }
     .fc-filters { display:flex; gap:6px; }
-    .filt-btn { padding:5px 14px; border:1.5px solid var(--border); border-radius:20px; background:transparent; font-size:13px; font-weight:600; cursor:pointer; color:var(--text2); transition:all .2s; }
-    .filt-btn.on { border-color:var(--primary); color:var(--primary); background:rgba(59,130,246,.08); }
-    .fc-counter { text-align:center; font-size:13px; color:var(--text2); font-weight:500; padding:8px 0 4px; flex-shrink:0; }
-    .card-scene { flex:1; min-height:0; margin:0 20px; perspective:1000px; cursor:pointer; user-select:none; }
-    .card-flip { width:100%; height:100%; position:relative; transform-style:preserve-3d; transition:transform .45s cubic-bezier(.4,0,.2,1); }
+    .filt-btn { padding:5px 14px; border:1.5px solid var(--border); border-radius:20px; background:transparent; font-size:13px; font-weight:700; cursor:pointer; color:var(--text2); transition:all .2s; }
+    .filt-btn.on { border-color:var(--primary); color:var(--primary); background:var(--primary-lt); }
+    .fc-counter { text-align:center; font-size:13px; color:var(--text2); font-weight:600; padding:8px 0 4px; flex-shrink:0; }
+    .card-scene { flex:1; min-height:0; margin:0 16px; perspective:1200px; cursor:pointer; user-select:none; }
+    .card-flip { width:100%; height:100%; position:relative; transform-style:preserve-3d; transition:transform .5s cubic-bezier(.4,0,.2,1); }
     .card-flip.flipped { transform:rotateY(180deg); }
-    .card-face { position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; background:var(--card); border-radius:16px; border:1px solid var(--border); box-shadow:0 4px 24px rgba(0,0,0,.08); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px; }
+    .card-face { position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; border-radius:20px; box-shadow:var(--shadow-lg); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px; background:var(--card); border:1px solid var(--border); }
+    .card-face:first-of-type { background:linear-gradient(155deg,#4338ca 0%,#7c3aed 100%); border:none; }
     .card-back-face { transform:rotateY(180deg); }
     .card-badge { position:absolute; top:14px; right:16px; font-size:18px; }
-    .card-eng { font-size:clamp(28px,7vw,56px); font-weight:800; text-align:center; line-height:1.1; }
-    .card-hint-txt { font-size:13px; color:var(--text2); margin-top:14px; }
-    .card-eng-sm { font-size:clamp(16px,3vw,26px); font-weight:600; color:var(--text2); text-align:center; }
-    .card-sep { width:50px; height:2px; background:var(--border); margin:14px 0; }
-    .card-jpn { font-size:clamp(22px,5vw,42px); font-weight:700; text-align:center; line-height:1.2; }
-    .fc-nav { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; flex-shrink:0; gap:10px; }
+    .card-eng { font-size:clamp(28px,7vw,56px); font-weight:800; text-align:center; line-height:1.1; color:#fff; }
+    .card-hint-txt { font-size:13px; color:rgba(255,255,255,.55); margin-top:14px; }
+    .card-eng-sm { font-size:clamp(16px,3vw,26px); font-weight:700; color:var(--text2); text-align:center; }
+    .card-pos { font-size:12px; font-weight:700; color:var(--primary); background:var(--primary-lt); border-radius:10px; padding:2px 10px; margin-top:5px; }
+    .card-sep { width:50px; height:2px; background:var(--border); margin:14px 0; border-radius:1px; }
+    .card-jpn { font-size:clamp(22px,5vw,42px); font-weight:800; text-align:center; line-height:1.2; color:var(--text); }
+    .fc-nav { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; flex-shrink:0; gap:10px; }
     .mark-btns { display:flex; gap:10px; }
-    .fc-keys { text-align:center; font-size:11px; color:var(--text2); padding:0 20px 10px; flex-shrink:0; }
+    .fc-keys { text-align:center; font-size:11px; color:var(--text2); padding:0 16px 10px; flex-shrink:0; }
 
-    /* Study tab */
+    /* ─── Study tab ─── */
     #studyTab { overflow:hidden; }
     #studyInner { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
     #noStudy { display:flex; flex-direction:column; flex:1; align-items:center; justify-content:center; gap:12px; color:var(--text2); padding:40px; text-align:center; }
-    .study-header { text-align:center; padding:18px 24px 12px; background:var(--card); border-bottom:1px solid var(--border); flex-shrink:0; }
-    .word-display { font-size:clamp(34px,9vw,62px); font-weight:800; letter-spacing:-.5px; margin-bottom:10px; }
-    .meaning-btn { background:transparent; border:1.5px solid var(--primary); color:var(--primary); padding:6px 18px; border-radius:20px; font-size:14px; font-weight:500; cursor:pointer; transition:all .2s; }
-    .meaning-btn.shown { background:var(--primary); color:#fff; }
-    .progress-area { display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 0; flex-shrink:0; }
-    .dots { display:flex; gap:12px; }
-    .dot { width:14px; height:14px; border-radius:50%; background:var(--border); transition:all .3s; }
-    .dot.done { background:var(--primary); } .dot.current { background:rgba(59,130,246,.45); transform:scale(1.3); }
-    .attempt-label { font-size:13px; color:var(--text2); font-weight:500; }
-    .canvas-wrap { flex:1; min-height:0; margin:0 20px; border-radius:var(--r); overflow:hidden; position:relative; background:#fafafa; border:1px solid var(--border); background-image:repeating-linear-gradient(to bottom,transparent,transparent calc(100%/7 - 1px),rgba(59,130,246,.12) calc(100%/7 - 1px),rgba(59,130,246,.12) calc(100%/7)); touch-action:none; cursor:crosshair; }
+    .study-header { text-align:center; padding:14px 16px 12px; background:linear-gradient(155deg,#4338ca 0%,#7c3aed 100%); border-bottom:none; flex-shrink:0; box-shadow:0 4px 16px rgba(67,56,202,.3); }
+    .word-header-row { display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:4px; }
+    .word-header-row .word-display { margin-bottom:0; }
+    .word-display { font-size:clamp(32px,8vw,58px); font-weight:800; letter-spacing:-.5px; color:#fff; text-shadow:0 2px 10px rgba(0,0,0,.25); margin-bottom:4px; }
+    .pos-badge { display:inline-block; font-size:11px; font-weight:700; color:rgba(255,255,255,.8); background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25); border-radius:20px; padding:2px 10px; margin-bottom:6px; }
+    .meaning-big { font-size:clamp(16px,4vw,24px); font-weight:800; color:#e0e7ff; margin:0 0 6px; text-align:center; }
+    .example-wrap { background:rgba(0,0,0,.18); border-radius:10px; padding:8px 12px; margin:0 2px; text-align:left; }
+    .example-en { font-size:clamp(11px,2.8vw,14px); color:rgba(255,255,255,.9); line-height:1.7; }
+    .example-en mark { background:rgba(255,255,255,.28); color:#fff; font-weight:800; border-radius:3px; padding:0 2px; font-style:normal; }
+    .example-ja { font-size:clamp(10px,2.5vw,12px); color:rgba(255,255,255,.55); margin-top:3px; font-style:italic; line-height:1.5; }
+    .progress-area { display:flex; flex-direction:column; align-items:center; gap:6px; padding:8px 0 6px; flex-shrink:0; }
+    .dots { display:flex; gap:14px; }
+    .dot { width:12px; height:12px; border-radius:50%; background:var(--border); transition:all .35s; }
+    .dot.done { background:linear-gradient(135deg,#4f46e5,#6366f1); box-shadow:0 2px 6px rgba(79,70,229,.4); }
+    .dot.current { background:rgba(79,70,229,.45); transform:scale(1.4); box-shadow:0 0 0 4px rgba(79,70,229,.15); }
+    .attempt-label { font-size:13px; color:var(--text2); font-weight:600; }
+    .canvas-wrap { flex:1; min-height:0; margin:8px 14px; border-radius:var(--r); overflow:hidden; position:relative; background:#fdfcff; border:1.5px solid var(--border); background-image:repeating-linear-gradient(to bottom,transparent,transparent calc(100%/7 - 1px),rgba(79,70,229,.1) calc(100%/7 - 1px),rgba(79,70,229,.1) calc(100%/7)); touch-action:none; cursor:crosshair; box-shadow:var(--shadow-lg); }
     #drawCanvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
-    .study-btns { display:flex; justify-content:center; gap:16px; padding:14px 20px; flex-shrink:0; }
-    .shuffle-btn { background:transparent; border:1.5px solid var(--border); border-radius:8px; padding:5px 12px; font-size:13px; font-weight:600; color:var(--text2); cursor:pointer; display:flex; align-items:center; gap:6px; transition:all .2s; }
-    .shuffle-btn.on { border-color:var(--primary); color:var(--primary); background:rgba(59,130,246,.07); }
+    .study-btns { display:flex; justify-content:center; gap:14px; padding:8px 16px 12px; flex-shrink:0; }
 
-    /* Modal */
-    .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; align-items:center; justify-content:center; padding:20px; }
+    /* ─── Speak button ─── */
+    .speak-btn { width:38px; height:38px; border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.18); border-radius:50%; font-size:18px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:all .15s; color:#fff; flex-shrink:0; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+    .speak-btn:active { background:rgba(255,255,255,.35); transform:scale(.88); }
+
+    /* ─── Modal ─── */
+    .overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:100; align-items:center; justify-content:center; padding:20px; }
     .overlay.open { display:flex; }
-    .modal { background:var(--card); border-radius:16px; padding:28px; width:100%; max-width:420px; box-shadow:0 20px 60px rgba(0,0,0,.2); animation:mIn .2s ease; }
+    .modal { background:var(--card); border-radius:20px; padding:28px; width:100%; max-width:420px; box-shadow:0 24px 80px rgba(15,23,42,.3); animation:mIn .2s ease; }
     @keyframes mIn { from{opacity:0;transform:scale(.95) translateY(-8px)} to{opacity:1;transform:none} }
-    .modal-title { font-size:20px; font-weight:700; margin-bottom:20px; }
+    .modal-title { font-size:20px; font-weight:800; margin-bottom:20px; }
     .field { margin-bottom:16px; }
     .field label { display:block; font-size:12px; font-weight:700; color:var(--text2); margin-bottom:6px; text-transform:uppercase; letter-spacing:.06em; }
-    .field input { width:100%; padding:12px 14px; border:1.5px solid var(--border); border-radius:8px; font-size:16px; outline:none; transition:border-color .2s; }
+    .field input { width:100%; padding:12px 14px; border:1.5px solid var(--border); border-radius:10px; font-size:16px; outline:none; transition:border-color .2s; }
     .field input:focus { border-color:var(--primary); }
     .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:24px; }
 
-    /* Completion overlay */
-    #cmpOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:200; align-items:center; justify-content:center; }
+    /* ─── Completion overlay ─── */
+    #cmpOverlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.65); z-index:200; align-items:center; justify-content:center; }
     #cmpOverlay.open { display:flex; }
-    .cmp-card { background:#fff; border-radius:24px; padding:40px; text-align:center; max-width:360px; width:90%; box-shadow:0 24px 80px rgba(0,0,0,.25); animation:cIn .4s cubic-bezier(.34,1.56,.64,1); }
-    @keyframes cIn { from{opacity:0;transform:scale(.65)} to{opacity:1;transform:scale(1)} }
-    .cmp-star { font-size:72px; display:block; margin-bottom:16px; animation:sBounce .6s cubic-bezier(.34,1.56,.64,1) .15s both; }
-    @keyframes sBounce { from{transform:scale(0) rotate(-30deg)} to{transform:scale(1) rotate(0)} }
-    .cmp-title { font-size:28px; font-weight:800; margin-bottom:8px; }
-    .cmp-word  { font-size:18px; font-weight:600; color:var(--primary); margin-bottom:24px; }
-    .cmp-btns  { display:flex; gap:12px; justify-content:center; }
+    .cmp-card { background:linear-gradient(155deg,#4338ca 0%,#7c3aed 100%); border-radius:28px; padding:40px 32px 32px; text-align:center; max-width:360px; width:90%; box-shadow:0 32px 80px rgba(67,56,202,.55); animation:cIn .4s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes cIn { from{opacity:0;transform:scale(.6)} to{opacity:1;transform:scale(1)} }
+    .cmp-star { font-size:80px; display:block; margin-bottom:12px; animation:sBounce .7s cubic-bezier(.34,1.56,.64,1) .1s both; }
+    @keyframes sBounce { from{transform:scale(0) rotate(-30deg)} to{transform:scale(1) rotate(8deg)} }
+    .cmp-title { font-size:26px; font-weight:800; margin-bottom:6px; color:#fff; }
+    .cmp-word  { font-size:17px; font-weight:700; color:#c7d2fe; margin-bottom:20px; }
+    .cmp-btns  { display:flex; gap:10px; justify-content:center; }
+    .cmp-btn-ghost { padding:12px 20px; border:1.5px solid rgba(255,255,255,.35); background:rgba(255,255,255,.12); color:#fff; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; }
+    .cmp-btn-main  { padding:12px 24px; background:rgba(255,255,255,.22); border:1.5px solid rgba(255,255,255,.4); color:#fff; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; }
+    .cmp-next-label { font-size:12px; color:rgba(255,255,255,.45); margin-top:14px; }
+
     ::-webkit-scrollbar { width:5px; }
     ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
-
-    /* ── Pronunciation button ── */
-    .speak-btn { width:38px; height:38px; border:none; background:rgba(59,130,246,.1); border-radius:50%; font-size:18px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:all .15s; color:var(--primary); flex-shrink:0; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
-    .speak-btn:active { background:rgba(59,130,246,.28); transform:scale(.88); }
-
-    /* ── Study: word + speaker row ── */
-    .word-header-row { display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:8px; }
-    .word-header-row .word-display { margin-bottom:0; }
-
-    /* ── POS badge ── */
-    .pos-badge { display:inline-block; font-size:12px; font-weight:700; color:var(--text2); background:rgba(100,116,139,.1); border-radius:20px; padding:2px 10px; margin-bottom:6px; }
-    .pos-tag { margin-left:6px; font-size:11px; font-weight:600; color:var(--text2); background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:1px 7px; vertical-align:middle; }
-    /* ── Always-visible meaning ── */
-    .meaning-big { font-size:clamp(22px,5.5vw,36px); font-weight:800; color:var(--text); margin:2px 0 8px; text-align:center; }
-    /* ── Example sentence ── */
-    .example-area { font-size:clamp(13px,3.2vw,15px); color:var(--text2); background:rgba(241,245,249,.9); border-left:3px solid var(--primary); border-radius:0 8px 8px 0; padding:7px 12px; margin:0 6px; line-height:1.6; text-align:left; }
-    .example-area mark { background:rgba(59,130,246,.15); color:var(--primary); font-weight:700; border-radius:3px; padding:0 2px; font-style:normal; }
-    /* ── Flashcard POS ── */
-    .card-pos { font-size:13px; font-weight:600; color:var(--text2); margin-top:2px; }
   </style>
 </head>
 <body>
@@ -146,7 +153,10 @@
   <header>
     <div class="header-top">
       <span class="app-title">✏️ 英単語ライター</span>
-      <button class="shuffle-btn" id="shuffleBtn" onclick="toggleShuffle()">🔀 <span id="shuffleLabel">シャッフルOFF</span></button>
+      <div class="header-controls">
+        <button class="mute-btn" id="muteBtn" onclick="toggleMute()" title="ミュート">🔊</button>
+        <button class="shuffle-btn" id="shuffleBtn" onclick="toggleShuffle()">🔀 <span id="shuffleLabel">シャッフルOFF</span></button>
+      </div>
     </div>
     <div class="tabs">
       <button class="tab-btn active" id="tabList"  onclick="switchTab('list')">📋 単語リスト</button>
@@ -228,7 +238,10 @@
           </div>
           <div class="pos-badge" id="posBadge" style="display:none"></div>
           <div class="meaning-big" id="meaningBig"></div>
-          <div class="example-area" id="exampleArea"></div>
+          <div class="example-wrap">
+            <div class="example-en" id="exampleArea"></div>
+            <div class="example-ja" id="exampleJa"></div>
+          </div>
         </div>
         <div class="progress-area">
           <div class="dots" id="dots"></div>
@@ -267,9 +280,10 @@
     <div class="cmp-title">5回書けた！</div>
     <div class="cmp-word" id="cmpWord"></div>
     <div class="cmp-btns">
-      <button class="btn btn-outline" onclick="restartWord()">🔄 もう一度</button>
-      <button class="btn btn-primary btn-lg" onclick="nextWord()">次の単語 →</button>
+      <button class="cmp-btn-ghost" onclick="restartWord()">🔄 もう一度</button>
+      <button class="cmp-btn-main"  onclick="nextWord()">次の単語 →</button>
     </div>
+    <div class="cmp-next-label">1.5秒後に自動で次へ…</div>
   </div>
 </div>
 
@@ -978,96 +992,280 @@ const POS_MAP = {
 };
 
 const EXAMPLE_TEMPLATES = {
-  v:['We need to {w} this as soon as possible.',
-     'Please {w} the report before the deadline.',
-     'The team decided to {w} the project.',
-     'Can you {w} this before the meeting?',
-     'They agreed to {w} the proposal.'],
-  n:['The {w} was approved by management.',
-     'Please review the {w} carefully.',
-     'We discussed the {w} at the meeting.',
-     'The {w} is due by end of the week.',
-     'Our {w} needs to be improved.'],
-  adj:['This is a {w} opportunity for our company.',
-       'We found a {w} solution to the problem.',
-       'Please make sure the data is {w}.',
-       'The results were quite {w}.',
-       'We need a {w} approach to this issue.'],
-  adv:['Please complete the task {w}.',
-       'We need to respond {w}.',
-       'The project progressed {w}.',
-       'They {w} addressed all concerns.',
-       'Please review the documents {w}.'],
-  prep:['This policy applies {w} all employees.',
-        'We will proceed {w} the original plan.'],
-  ph:['Could you {w} the details for me?',
-      'Let\'s {w} before the deadline.',
-      'We need to {w} on this matter.'],
+  v:[
+    {en:'We need to {w} this as soon as possible.',ja:'これをできるだけ早く行う必要があります。'},
+    {en:'Please {w} the report before the deadline.',ja:'締め切り前にレポートを処理してください。'},
+    {en:'The team decided to {w} the project.',ja:'チームはプロジェクトに取り組むことにしました。'},
+    {en:'Can you {w} this before the meeting?',ja:'会議の前にこれを対応できますか？'},
+    {en:'They agreed to {w} the proposal.',ja:'彼らは提案を実行することに合意しました。'},
+  ],
+  n:[
+    {en:'The {w} was approved by management.',ja:'経営陣がそれを承認しました。'},
+    {en:'Please review the {w} carefully.',ja:'それを注意深く確認してください。'},
+    {en:'We discussed the {w} at the meeting.',ja:'会議でそれについて話し合いました。'},
+    {en:'The {w} is due by end of the week.',ja:'今週末がそれの期限です。'},
+    {en:'Our {w} needs to be improved.',ja:'私たちのそれを改善する必要があります。'},
+  ],
+  adj:[
+    {en:'This is a {w} opportunity for our company.',ja:'これは当社にとって重要な機会です。'},
+    {en:'We found a {w} solution to the problem.',ja:'問題に対する適切な解決策を見つけました。'},
+    {en:'Please make sure the data is {w}.',ja:'データが正確であることを確認してください。'},
+    {en:'The results were quite {w}.',ja:'結果は非常に重要でした。'},
+    {en:'We need a {w} approach to this issue.',ja:'この問題には適切なアプローチが必要です。'},
+  ],
+  adv:[
+    {en:'Please complete the task {w}.',ja:'タスクを速やかに完了してください。'},
+    {en:'We need to respond {w}.',ja:'速やかに対応する必要があります。'},
+    {en:'The project progressed {w}.',ja:'プロジェクトは順調に進みました。'},
+    {en:'They {w} addressed all concerns.',ja:'彼らはすべての懸念事項に適切に対応しました。'},
+    {en:'Please review the documents {w}.',ja:'書類を迅速に確認してください。'},
+  ],
+  prep:[
+    {en:'This policy applies to all employees.',ja:'この方針はすべての従業員に適用されます。'},
+    {en:'We will proceed with the original plan.',ja:'元の計画で進めます。'},
+  ],
+  ph:[
+    {en:'Could you {w} the details for me?',ja:'詳細について対応していただけますか？'},
+    {en:"Let's {w} before the deadline.",ja:'締め切り前に対応しましょう。'},
+    {en:'We need to {w} on this matter.',ja:'この件について対応する必要があります。'},
+  ],
 };
 
 const EXAMPLES = {
-  pursue:['We will pursue new business opportunities in Asia.','They decided to pursue a different strategy.'],
-  achieve:['We achieved our quarterly sales targets.','The team worked hard to achieve their goals.'],
-  conduct:['We will conduct a survey to understand customer needs.','Please conduct the meeting efficiently.'],
-  negotiate:['We need to negotiate better contract terms with the supplier.','Both sides agreed to negotiate a settlement.'],
-  submit:['Please submit your expense report by Friday.','All applications must be submitted online.'],
-  confirm:['Please confirm your attendance by tomorrow.','Could you confirm the meeting time?'],
-  evaluate:['We will evaluate the results at the end of Q3.','Please evaluate the proposal carefully.'],
-  implement:['We plan to implement the new system next month.','The changes will be implemented gradually.'],
-  streamline:['We need to streamline the approval process.','The new system streamlines daily operations.'],
-  coordinate:['Please coordinate with other departments on this.','She coordinates all client meetings.'],
-  allocate:['We will allocate more resources to this project.','The budget was allocated across three departments.'],
-  monitor:['We need to monitor the project progress closely.','The system monitors performance in real time.'],
-  revise:['Please revise the proposal based on our feedback.','The schedule was revised to meet the new deadline.'],
-  facilitate:['She will facilitate the workshop sessions.','This platform facilitates better team communication.'],
-  'as soon as possible':['Please send the signed documents as soon as possible.','I need this report as soon as possible.'],
-  'at your convenience':['Please call me back at your convenience.','Feel free to stop by at your convenience.'],
-  'come up with':['We need to come up with a better solution by Friday.','Can you come up with some ideas for the campaign?'],
-  'deal with':['We need to deal with this customer complaint immediately.','How do you plan to deal with the budget shortfall?'],
-  'find out':['Please find out when the shipment will arrive.','I\'ll find out who is responsible for this issue.'],
-  'get back to':['I\'ll get back to you with the full details by end of day.','Could you get back to me as soon as possible?'],
-  'keep in mind':['Please keep in mind that the deadline is this Friday.','Keep in mind that the budget is limited.'],
-  'look forward to':['We look forward to hearing from you soon.','I look forward to meeting you at the conference.'],
-  'look into':['We will look into this issue and respond shortly.','Please look into the possibility of reducing costs.'],
-  'make sure':['Please make sure all documents are signed before submission.','Make sure to back up your data regularly.'],
-  'set up':['Can you set up a meeting for next Tuesday?','We need to set up the presentation equipment in advance.'],
-  'take care of':['I will take care of the travel arrangements.','Who is taking care of the client onboarding?'],
-  'take into account':['Please take into account the shipping time when planning.','We need to take all risks into account before proceeding.'],
-  'on behalf of':['I am writing on behalf of the CEO.','Please accept this award on behalf of the entire team.'],
-  'in charge of':['Who is in charge of this marketing project?','She is in charge of all customer relations.'],
-  'in addition to':['In addition to the base salary, we offer excellent benefits.','In addition to English, candidates should speak Japanese.'],
-  'in advance':['Please reserve your seat in advance.','Could you send the meeting agenda in advance?'],
-  'due to':['The flight was delayed due to bad weather.','Due to high demand, delivery may take 2–3 extra days.'],
-  'carry out':['We will carry out the plan exactly as scheduled.','The team carried out the experiment successfully.'],
-  'hand in':['Please hand in your report by 5 PM on Monday.','All application forms must be handed in before Friday.'],
-  'run out of':['We are running out of printer paper.','We almost ran out of time before the presentation.'],
-  'turn down':['The board turned down the acquisition proposal.','She turned down the job offer for personal reasons.'],
-  'ahead of schedule':['The project was completed two days ahead of schedule.','We are currently ahead of schedule.'],
-  'fall behind':['We cannot afford to fall behind on this project.','We fell behind schedule due to unexpected system issues.'],
-  'cut costs':['We need to find effective ways to cut costs.','The company cut costs by reducing business travel.'],
-  'reach an agreement':['Both parties were able to reach an agreement.','We hope to reach an agreement before the end of the month.'],
-  'break even':['We expect to break even by the end of Q3.','The new branch managed to break even in its first year.'],
-  'call off':['The outdoor event was called off due to heavy rain.','They had to call off the merger at the last minute.'],
-  'up to date':['Please keep your contact information up to date.','Make sure all software is up to date before the audit.'],
-  'out of stock':['The item you ordered is currently out of stock.','This model has been out of stock for two weeks.'],
-  'free of charge':['Delivery is free of charge for orders over ¥10,000.','We will replace the defective unit free of charge.'],
-  'out of order':['The elevator is out of order until further notice.','One of the office printers is out of order.'],
-  'on schedule':['The construction project is progressing on schedule.','Everything is on schedule for the product launch.'],
-  'in line with':['Our pricing is in line with current market standards.','Please ensure the proposal is in line with company policy.'],
-  'subject to':['This offer is subject to board approval.','All listed prices are subject to change without notice.'],
+  pursue:[
+    {en:'We will pursue new business opportunities in Asia.',ja:'アジアで新たなビジネスチャンスを追求します。'},
+    {en:'They decided to pursue a different strategy.',ja:'彼らは別の戦略を追求することにしました。'},
+  ],
+  achieve:[
+    {en:'We achieved our quarterly sales targets.',ja:'四半期の売上目標を達成しました。'},
+    {en:'The team worked hard to achieve their goals.',ja:'チームは目標達成のために懸命に取り組みました。'},
+  ],
+  conduct:[
+    {en:'We will conduct a survey to understand customer needs.',ja:'顧客ニーズを把握するためにアンケートを実施します。'},
+    {en:'Please conduct the meeting efficiently.',ja:'会議を効率的に進行してください。'},
+  ],
+  negotiate:[
+    {en:'We need to negotiate better contract terms with the supplier.',ja:'サプライヤーとより良い契約条件を交渉する必要があります。'},
+    {en:'Both sides agreed to negotiate a settlement.',ja:'双方は和解に向けて交渉することに合意しました。'},
+  ],
+  submit:[
+    {en:'Please submit your expense report by Friday.',ja:'金曜日までに経費精算書を提出してください。'},
+    {en:'All applications must be submitted online.',ja:'すべての申請はオンラインで提出する必要があります。'},
+  ],
+  confirm:[
+    {en:'Please confirm your attendance by tomorrow.',ja:'明日までに出席を確認してください。'},
+    {en:'Could you confirm the meeting time?',ja:'会議の時間を確認していただけますか？'},
+  ],
+  evaluate:[
+    {en:'We will evaluate the results at the end of Q3.',ja:'第3四半期末に結果を評価します。'},
+    {en:'Please evaluate the proposal carefully.',ja:'提案を慎重に評価してください。'},
+  ],
+  implement:[
+    {en:'We plan to implement the new system next month.',ja:'来月新しいシステムを導入する予定です。'},
+    {en:'The changes will be implemented gradually.',ja:'変更は段階的に実施されます。'},
+  ],
+  streamline:[
+    {en:'We need to streamline the approval process.',ja:'承認プロセスを合理化する必要があります。'},
+    {en:'The new system streamlines daily operations.',ja:'新しいシステムにより日常業務が効率化されます。'},
+  ],
+  coordinate:[
+    {en:'Please coordinate with other departments on this.',ja:'この件について他部門と調整してください。'},
+    {en:'She coordinates all client meetings.',ja:'彼女はすべてのクライアントミーティングを調整しています。'},
+  ],
+  allocate:[
+    {en:'We will allocate more resources to this project.',ja:'このプロジェクトにより多くのリソースを配分します。'},
+    {en:'The budget was allocated across three departments.',ja:'予算は3つの部門に配分されました。'},
+  ],
+  monitor:[
+    {en:'We need to monitor the project progress closely.',ja:'プロジェクトの進捗を注意深く監視する必要があります。'},
+    {en:'The system monitors performance in real time.',ja:'システムはリアルタイムでパフォーマンスを監視します。'},
+  ],
+  revise:[
+    {en:'Please revise the proposal based on our feedback.',ja:'フィードバックに基づいて提案を修正してください。'},
+    {en:'The schedule was revised to meet the new deadline.',ja:'新しい締め切りに合わせてスケジュールが改訂されました。'},
+  ],
+  facilitate:[
+    {en:'She will facilitate the workshop sessions.',ja:'彼女がワークショップのセッションを進行します。'},
+    {en:'This platform facilitates better team communication.',ja:'このプラットフォームはチームのコミュニケーションを促進します。'},
+  ],
+  'as soon as possible':[
+    {en:'Please send the signed documents as soon as possible.',ja:'署名済みの書類をできるだけ早くお送りください。'},
+    {en:'I need this report as soon as possible.',ja:'このレポートをできるだけ早く必要としています。'},
+  ],
+  'at your convenience':[
+    {en:'Please call me back at your convenience.',ja:'ご都合のよい時にお電話ください。'},
+    {en:'Feel free to stop by at your convenience.',ja:'ご都合のよい時にお立ち寄りください。'},
+  ],
+  'come up with':[
+    {en:'We need to come up with a better solution by Friday.',ja:'金曜日までにより良い解決策を考え出す必要があります。'},
+    {en:'Can you come up with some ideas for the campaign?',ja:'キャンペーンのアイデアを考えてもらえますか？'},
+  ],
+  'deal with':[
+    {en:'We need to deal with this customer complaint immediately.',ja:'この顧客のクレームに今すぐ対処する必要があります。'},
+    {en:'How do you plan to deal with the budget shortfall?',ja:'予算不足にどのように対処する予定ですか？'},
+  ],
+  'find out':[
+    {en:'Please find out when the shipment will arrive.',ja:'荷物がいつ届くか調べてください。'},
+    {en:"I'll find out who is responsible for this issue.",ja:'この問題の担当者を調べます。'},
+  ],
+  'get back to':[
+    {en:"I'll get back to you with the full details by end of day.",ja:'本日中に詳細をお知らせします。'},
+    {en:'Could you get back to me as soon as possible?',ja:'できるだけ早くご返答いただけますか？'},
+  ],
+  'keep in mind':[
+    {en:'Please keep in mind that the deadline is this Friday.',ja:'締め切りが今週金曜日であることを覚えておいてください。'},
+    {en:'Keep in mind that the budget is limited.',ja:'予算が限られていることを念頭に置いてください。'},
+  ],
+  'look forward to':[
+    {en:'We look forward to hearing from you soon.',ja:'近いうちにご連絡いただけるのを楽しみにしています。'},
+    {en:'I look forward to meeting you at the conference.',ja:'会議でお会いできるのを楽しみにしています。'},
+  ],
+  'look into':[
+    {en:'We will look into this issue and respond shortly.',ja:'この問題を調査して、すぐにご連絡します。'},
+    {en:'Please look into the possibility of reducing costs.',ja:'コスト削減の可能性を調査してください。'},
+  ],
+  'make sure':[
+    {en:'Please make sure all documents are signed before submission.',ja:'提出前にすべての書類に署名があることを確認してください。'},
+    {en:'Make sure to back up your data regularly.',ja:'定期的にデータをバックアップするようにしてください。'},
+  ],
+  'set up':[
+    {en:'Can you set up a meeting for next Tuesday?',ja:'来週火曜日にミーティングを設定してもらえますか？'},
+    {en:'We need to set up the presentation equipment in advance.',ja:'プレゼン機材を事前に準備する必要があります。'},
+  ],
+  'take care of':[
+    {en:'I will take care of the travel arrangements.',ja:'出張の手配は私が担当します。'},
+    {en:'Who is taking care of the client onboarding?',ja:'クライアントのオンボーディングは誰が担当していますか？'},
+  ],
+  'take into account':[
+    {en:'Please take into account the shipping time when planning.',ja:'計画時に配送時間を考慮してください。'},
+    {en:'We need to take all risks into account before proceeding.',ja:'進める前にすべてのリスクを考慮する必要があります。'},
+  ],
+  'on behalf of':[
+    {en:'I am writing on behalf of the CEO.',ja:'CEOを代表してご連絡しております。'},
+    {en:'Please accept this award on behalf of the entire team.',ja:'チーム全員を代表してこの賞をお受け取りください。'},
+  ],
+  'in charge of':[
+    {en:'Who is in charge of this marketing project?',ja:'このマーケティングプロジェクトの担当者は誰ですか？'},
+    {en:'She is in charge of all customer relations.',ja:'彼女はすべての顧客対応を担当しています。'},
+  ],
+  'in addition to':[
+    {en:'In addition to the base salary, we offer excellent benefits.',ja:'基本給に加えて、充実した福利厚生を提供しています。'},
+    {en:'In addition to English, candidates should speak Japanese.',ja:'英語に加えて、候補者は日本語も話せることが望ましいです。'},
+  ],
+  'in advance':[
+    {en:'Please reserve your seat in advance.',ja:'事前に席をご予約ください。'},
+    {en:'Could you send the meeting agenda in advance?',ja:'会議の議題を事前に送っていただけますか？'},
+  ],
+  'due to':[
+    {en:'The flight was delayed due to bad weather.',ja:'悪天候のためフライトが遅延しました。'},
+    {en:'Due to high demand, delivery may take 2–3 extra days.',ja:'需要が高いため、配送に2〜3日余分にかかる場合があります。'},
+  ],
+  'carry out':[
+    {en:'We will carry out the plan exactly as scheduled.',ja:'計画通りに予定を実行します。'},
+    {en:'The team carried out the experiment successfully.',ja:'チームは実験を成功裏に実施しました。'},
+  ],
+  'hand in':[
+    {en:'Please hand in your report by 5 PM on Monday.',ja:'月曜日の午後5時までにレポートを提出してください。'},
+    {en:'All application forms must be handed in before Friday.',ja:'すべての申込書は金曜日までに提出する必要があります。'},
+  ],
+  'run out of':[
+    {en:'We are running out of printer paper.',ja:'プリンター用紙が不足しています。'},
+    {en:'We almost ran out of time before the presentation.',ja:'プレゼン前に時間がほとんどなくなりました。'},
+  ],
+  'turn down':[
+    {en:'The board turned down the acquisition proposal.',ja:'取締役会は買収提案を却下しました。'},
+    {en:'She turned down the job offer for personal reasons.',ja:'彼女は個人的な理由で求人を断りました。'},
+  ],
+  'ahead of schedule':[
+    {en:'The project was completed two days ahead of schedule.',ja:'プロジェクトは予定より2日早く完了しました。'},
+    {en:'We are currently ahead of schedule.',ja:'現在、予定より進んでいます。'},
+  ],
+  'fall behind':[
+    {en:'We cannot afford to fall behind on this project.',ja:'このプロジェクトで遅れることはできません。'},
+    {en:'We fell behind schedule due to unexpected system issues.',ja:'予期しないシステムの問題でスケジュールが遅れました。'},
+  ],
+  'cut costs':[
+    {en:'We need to find effective ways to cut costs.',ja:'効果的なコスト削減策を見つける必要があります。'},
+    {en:'The company cut costs by reducing business travel.',ja:'会社は出張を減らすことでコストを削減しました。'},
+  ],
+  'reach an agreement':[
+    {en:'Both parties were able to reach an agreement.',ja:'双方は合意に達することができました。'},
+    {en:'We hope to reach an agreement before the end of the month.',ja:'今月末までに合意に達することを希望します。'},
+  ],
+  'break even':[
+    {en:'We expect to break even by the end of Q3.',ja:'第3四半期末までに損益分岐点に達する見込みです。'},
+    {en:'The new branch managed to break even in its first year.',ja:'新しい支店は初年度で損益分岐点を達成しました。'},
+  ],
+  'call off':[
+    {en:'The outdoor event was called off due to heavy rain.',ja:'大雨のため屋外イベントは中止されました。'},
+    {en:'They had to call off the merger at the last minute.',ja:'土壇場で合併を中止せざるを得ませんでした。'},
+  ],
+  'up to date':[
+    {en:'Please keep your contact information up to date.',ja:'連絡先情報を最新の状態に保ってください。'},
+    {en:'Make sure all software is up to date before the audit.',ja:'監査前にすべてのソフトウェアを最新の状態にしてください。'},
+  ],
+  'out of stock':[
+    {en:'The item you ordered is currently out of stock.',ja:'ご注文の商品は現在在庫切れです。'},
+    {en:'This model has been out of stock for two weeks.',ja:'このモデルは2週間品切れ状態が続いています。'},
+  ],
+  'free of charge':[
+    {en:'Delivery is free of charge for orders over ¥10,000.',ja:'1万円以上のご注文は配送料無料です。'},
+    {en:'We will replace the defective unit free of charge.',ja:'不良品は無償で交換いたします。'},
+  ],
+  'out of order':[
+    {en:'The elevator is out of order until further notice.',ja:'エレベーターは追って連絡があるまで故障中です。'},
+    {en:'One of the office printers is out of order.',ja:'オフィスのプリンターの1台が故障しています。'},
+  ],
+  'on schedule':[
+    {en:'The construction project is progressing on schedule.',ja:'建設プロジェクトは予定通りに進んでいます。'},
+    {en:'Everything is on schedule for the product launch.',ja:'製品ローンチに向けてすべてが予定通りです。'},
+  ],
+  'in line with':[
+    {en:'Our pricing is in line with current market standards.',ja:'当社の価格は現在の市場標準と一致しています。'},
+    {en:'Please ensure the proposal is in line with company policy.',ja:'提案が会社の方針に沿っていることを確認してください。'},
+  ],
+  'subject to':[
+    {en:'This offer is subject to board approval.',ja:'このオファーは取締役会の承認を条件とします。'},
+    {en:'All listed prices are subject to change without notice.',ja:'記載価格は予告なく変更される場合があります。'},
+  ],
+  'look after':[
+    {en:'Could you look after the new interns this week?',ja:'今週、新しいインターンたちの面倒を見ていただけますか？'},
+    {en:'She looks after all the key accounts.',ja:'彼女はすべての主要顧客を担当しています。'},
+  ],
+  'follow through':[
+    {en:'It is important to follow through on your commitments.',ja:'約束を最後まで実行することが重要です。'},
+    {en:'Please follow through with the client feedback.',ja:'顧客のフィードバックをしっかりと対応してください。'},
+  ],
+  'go ahead':[
+    {en:'Please go ahead with the order if the price is acceptable.',ja:'価格が問題なければ注文を進めてください。'},
+    {en:'You have my approval — go ahead.',ja:'承認しましたので進めてください。'},
+  ],
+  'take over':[
+    {en:'She will take over the project from next Monday.',ja:'来週月曜日から彼女がプロジェクトを引き継ぎます。'},
+    {en:'Who will take over while the manager is on leave?',ja:'マネージャーが休暇中は誰が引き継ぎますか？'},
+  ],
+  'keep up with':[
+    {en:'It is hard to keep up with all the industry changes.',ja:'業界のすべての変化についていくのは難しいです。'},
+    {en:'Please keep up with the latest regulatory updates.',ja:'最新の規制の更新情報を把握し続けてください。'},
+  ],
 };
 
 function getPos(eng) { return POS_MAP[eng.toLowerCase()] || ''; }
 function posLabel(pos) {
   return {v:'動詞',n:'名詞',adj:'形容詞',adv:'副詞',prep:'前置詞',ph:'熟語'}[pos] || '';
 }
-function getRandomExample(eng, pos) {
+function getRandomExample(eng, pos, jpn) {
   var key = eng.toLowerCase();
   if (EXAMPLES[key] && EXAMPLES[key].length) {
-    var e = EXAMPLES[key]; return e[Math.floor(Math.random()*e.length)];
+    var arr = EXAMPLES[key];
+    return arr[Math.floor(Math.random() * arr.length)];
   }
   var t = EXAMPLE_TEMPLATES[pos] || EXAMPLE_TEMPLATES.n;
-  return t[Math.floor(Math.random()*t.length)].replace(/\{w\}/g, eng);
+  var tmpl = t[Math.floor(Math.random() * t.length)];
+  return {
+    en: tmpl.en.replace(/\{w\}/g, eng),
+    ja: tmpl.ja,
+  };
 }
 function highlightWord(sentence, word) {
   if (!sentence || !word) return esc(sentence);
@@ -1216,6 +1414,7 @@ function flipCard() {
   fc.flipped = true;
   document.getElementById('cardFlip').classList.add('flipped');
   document.getElementById('markBtns').style.display = 'flex';
+  setTimeout(speakFC, 320);
 }
 
 function markCard(result) {
@@ -1285,8 +1484,9 @@ function renderStudy() {
   // Meaning (always visible, big)
   document.getElementById('meaningBig').textContent = w.jpn;
   // Random example sentence
-  const ex = getRandomExample(w.eng, pos);
-  document.getElementById('exampleArea').innerHTML = highlightWord(ex, w.eng);
+  const ex = getRandomExample(w.eng, pos, w.jpn);
+  document.getElementById('exampleArea').innerHTML = highlightWord(ex.en, w.eng);
+  document.getElementById('exampleJa').textContent  = ex.ja;
   renderDots(); updateNextBtn();
 }
 function renderDots() {
@@ -1302,6 +1502,7 @@ function updateNextBtn() {
   btn.className   = 'btn btn-lg ' + (study.attempt < 5 ? 'btn-primary' : 'btn-success');
 }
 function nextAttempt() {
+  if (_autoAdvTimer) { clearTimeout(_autoAdvTimer); _autoAdvTimer = null; }
   if (study.attempt < 5) { study.attempt++; clearCanvas(); renderDots(); updateNextBtn(); }
   else showCompletion();
 }
@@ -1333,13 +1534,47 @@ function toggleShuffle() {
 }
 
 // ━━━ Pronunciation ━━━
-function speakWord(word) {
+var _muted = false;
+var _voice  = null;
+
+(function initVoice() {
   if (!window.speechSynthesis) return;
+  function pickVoice() {
+    var voices = window.speechSynthesis.getVoices();
+    if (!voices.length) return;
+    var prefer = ['Samantha','Karen','Moira','Fiona','Daniel','Alex',
+                  'Google US English','Microsoft Aria','Microsoft Zira'];
+    for (var p = 0; p < prefer.length; p++) {
+      for (var v = 0; v < voices.length; v++) {
+        if (voices[v].name.indexOf(prefer[p]) !== -1 && /^en/.test(voices[v].lang)) {
+          _voice = voices[v]; return;
+        }
+      }
+    }
+    for (var v = 0; v < voices.length; v++) {
+      if (voices[v].lang === 'en-US') { _voice = voices[v]; return; }
+    }
+  }
+  pickVoice();
+  window.speechSynthesis.addEventListener('voiceschanged', pickVoice);
+})();
+
+function speakWord(word) {
+  if (_muted || !window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   var utter = new SpeechSynthesisUtterance(word);
-  utter.lang = 'en-US';
-  utter.rate = 0.85;
+  utter.lang  = 'en-US';
+  utter.rate  = 0.82;
+  utter.pitch = 1.0;
+  if (_voice) utter.voice = _voice;
   window.speechSynthesis.speak(utter);
+}
+function toggleMute() {
+  _muted = !_muted;
+  var btn = document.getElementById('muteBtn');
+  btn.textContent = _muted ? '🔇' : '🔊';
+  btn.classList.toggle('muted', _muted);
+  if (_muted && window.speechSynthesis) window.speechSynthesis.cancel();
 }
 function speakCurrent() {
   var w = curWord();
@@ -1386,7 +1621,16 @@ function penMove(clientX, clientY) {
   lastX = x; lastY = y;
 }
 
-function penUp() { drawing = false; }
+var _autoAdvTimer = null;
+function penUp() {
+  drawing = false;
+  if (!document.getElementById('studyTab').classList.contains('active')) return;
+  if (_autoAdvTimer) clearTimeout(_autoAdvTimer);
+  _autoAdvTimer = setTimeout(function() {
+    _autoAdvTimer = null;
+    nextAttempt();
+  }, 1200);
+}
 
 function setupCanvas() {
   canvas = document.getElementById('drawCanvas');
