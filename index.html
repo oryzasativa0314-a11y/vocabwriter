@@ -129,9 +129,16 @@
     .word-header-row { display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:8px; }
     .word-header-row .word-display { margin-bottom:0; }
 
-    /* ── Meaning reveal box ── */
-    .meaning-reveal { font-size:clamp(18px,4.5vw,28px); font-weight:800; color:#1d4ed8; background:linear-gradient(135deg,#eff6ff,#dbeafe); border:1.5px solid #93c5fd; border-radius:12px; padding:10px 24px; margin:0 auto 10px; max-width:92%; text-align:center; animation:mReveal .22s ease; }
-    @keyframes mReveal { from{opacity:0;transform:scale(.94) translateY(-5px)} to{opacity:1;transform:none} }
+    /* ── POS badge ── */
+    .pos-badge { display:inline-block; font-size:12px; font-weight:700; color:var(--text2); background:rgba(100,116,139,.1); border-radius:20px; padding:2px 10px; margin-bottom:6px; }
+    .pos-tag { margin-left:6px; font-size:11px; font-weight:600; color:var(--text2); background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:1px 7px; vertical-align:middle; }
+    /* ── Always-visible meaning ── */
+    .meaning-big { font-size:clamp(22px,5.5vw,36px); font-weight:800; color:var(--text); margin:2px 0 8px; text-align:center; }
+    /* ── Example sentence ── */
+    .example-area { font-size:clamp(13px,3.2vw,15px); color:var(--text2); background:rgba(241,245,249,.9); border-left:3px solid var(--primary); border-radius:0 8px 8px 0; padding:7px 12px; margin:0 6px; line-height:1.6; text-align:left; }
+    .example-area mark { background:rgba(59,130,246,.15); color:var(--primary); font-weight:700; border-radius:3px; padding:0 2px; font-style:normal; }
+    /* ── Flashcard POS ── */
+    .card-pos { font-size:13px; font-weight:600; color:var(--text2); margin-top:2px; }
   </style>
 </head>
 <body>
@@ -182,6 +189,7 @@
             </div>
             <div class="card-face card-back-face">
               <div class="card-eng-sm" id="cardEngB"></div>
+              <div class="card-pos"    id="cardPos"></div>
               <div class="card-sep"></div>
               <div class="card-jpn"   id="cardJpn"></div>
             </div>
@@ -218,8 +226,9 @@
             <div class="word-display" id="wordDisplay"></div>
             <button class="speak-btn" onclick="speakCurrent()" title="発音を聞く">🔊</button>
           </div>
-          <div class="meaning-reveal" id="meaningReveal" style="display:none"></div>
-          <button class="meaning-btn" id="meaningBtn" onclick="toggleMeaning()">👁 <span id="meaningText">意味を見る</span></button>
+          <div class="pos-badge" id="posBadge" style="display:none"></div>
+          <div class="meaning-big" id="meaningBig"></div>
+          <div class="example-area" id="exampleArea"></div>
         </div>
         <div class="progress-area">
           <div class="dots" id="dots"></div>
@@ -689,13 +698,389 @@ const TOEIC_WORDS = [
 ['paradigm shift','パラダイムシフト・常識の大転換・ものの見方の根本的変化'],
 ['key takeaway','重要なポイント・持ち帰るべき学び・要点'],
 ['low-hanging fruit','すぐ手に入る成果・容易に達成できる目標'],
+// ── ウェブサイト単語 ──
+['pursue','追求する・追及する'],['infer','推察する・推測する'],['reinforce','強化する・補強する'],
+['obey','従う・服従する'],['prefer','好む・～の方がよい'],['occupy','占有する・従事する'],
+['compare','比較する・対照する'],['release','発表する・公開する・解放する'],
+['relax','ゆるめる・くつろぐ'],['destroy','破壊する・壊す'],['graduate','卒業する'],
+['empty','空にする・空の'],['entertain','もてなす・楽しませる'],['argue','議論する・主張する'],
+['illustrate','説明する・図解する'],['examine','調べる・審査する'],['suffer','被る・苦しむ'],
+['propose','提案する・申し込む'],['apologize','謝罪する'],['browse','見て回る・閲覧する'],
+['satisfy','満足させる'],['represent','代表する・表す'],['exclude','除く・排除する'],
+['possess','所有する・持つ'],['institute','制定する・設立する'],['overlook','見逃す・見下ろす'],
+['transform','変える・変換する'],['instruct','指示する・教える'],['dispute','異議を唱える・紛争'],
+['simulate','まねる・シミュレートする'],['subscribe','購読する・申し込む'],
+['correct','修正する・正しい'],['loosen','ゆるめる・緩和する'],['successful','成功した'],
+['admiration','感心・賞賛'],['struggle','奮闘する・苦労する'],['enclose','同封する・囲む'],
+['blame','非難する・責める'],['attain','実現する・達成する'],['treat','扱う・もてなす'],
+['emphasize','強調する'],['renovate','改装する・改築する'],['confess','告白する・白状する'],
+['hesitate','ためらう・躊躇する'],['object','反対する・目標'],['rank','位置する・ランク付けする'],
+['pour','注ぐ・降り注ぐ'],['feed','食べさせる・供給する'],['stack','積み重ねる'],
+['prove','証明する・立証する'],['refuse','拒む・断る'],['counsel','助言する・カウンセリング'],
+['obey','従う'],['sweep','掃く・一掃する'],['commute','通勤する'],
+['argue','議論する'],['fine','良い・罰金'],['basis','ベース・根拠'],
+['resident','住民・居住者'],['favor','善意・好意'],['replacement','交換・代替'],
+['publication','出版物・発行'],['saving','節約・貯蓄'],['appliance','電化製品'],
+['admiration','賞賛・感心'],['ladder','はしご・出世の階段'],
+// ── 熟語・フレーズ ──
+['as soon as possible','できるだけ早く・ASAP'],
+['at your convenience','ご都合のよい時に・都合のよい時に'],
+['come up with','思いつく・考え出す'],
+['deal with','対処する・取り扱う・対応する'],
+['find out','調べる・発見する・判明する'],
+['get back to','後で返事をする・折り返し連絡する'],
+['keep in mind','心に留める・覚えておく'],
+['look forward to','楽しみにしている・期待する'],
+['look into','調査する・検討する'],
+['make sure','確認する・確実にする'],
+['set up','設置する・設立する・準備する'],
+['take care of','対処する・処理する・担当する'],
+['take into account','考慮に入れる・勘案する'],
+['on behalf of','～を代表して・～の代わりに'],
+['in charge of','～を担当して・責任を持って'],
+['in addition to','～に加えて・さらに'],
+['in advance','事前に・前もって'],
+['due to','～のために・～が原因で'],
+['carry out','実行する・遂行する'],
+['hand in','提出する・手渡す'],
+['run out of','～を使い果たす・不足する'],
+['turn down','断る・却下する・音量を下げる'],
+['ahead of schedule','予定より早く・スケジュール前倒し'],
+['fall behind','遅れる・遅れをとる'],
+['cut costs','コストを削減する・経費を削る'],
+['reach an agreement','合意に達する・合意する'],
+['break even','損益分岐点に達する'],
+['call off','中止する・取り消す'],
+['up to date','最新の・最新情報に'],
+['out of stock','在庫切れ・品切れ'],
+['free of charge','無料で・無償で'],
+['out of order','故障中・順不同'],
+['on schedule','予定通りに・スケジュール通りに'],
+['in line with','～に沿って・一致して・準拠して'],
+['subject to','～次第で・～を条件として'],
+['work out','解決する・うまくいく・トレーニングする'],
+['pick up','受け取る・向上する・立ち直る'],
+['point out','指摘する・注意を促す'],
+['put off','延期する・後回しにする'],
+['rely on','頼る・信頼する・依存する'],
+['take on','引き受ける・取り組む・採用する'],
+['take part in','参加する・関与する'],
+['bring about','もたらす・引き起こす'],
+['catch up on','追いつく・遅れを取り戻す'],
+['draw up','作成する・起草する・計画を立てる'],
+['look after','面倒を見る・管理する'],
+['in the long run','長い目で見れば・長期的には'],
+['meet a deadline','締め切りに間に合う'],
+['make a profit','利益を出す・黒字になる'],
+['with regard to','～に関して・～について'],
+['regardless of','～にかかわらず・～を問わず'],
+['prior to','～の前に・事前に'],
+['in the event of','～の場合に・万が一～なら'],
+['at no extra cost','追加費用なしで・無償で'],
+['under construction','工事中・建設中'],
+['follow through','やり遂げる・最後まで実行する'],
+['as a result of','～の結果として'],
+['in the meantime','その間に・それまでの間'],
+['at the latest','遅くとも・最遅で'],
+['on a regular basis','定期的に・定常的に'],
+['for the time being','当分の間・とりあえず'],
+['in the near future','近い将来・近々'],
+['go over','見直す・確認する・超える'],
+['go ahead','進める・先に進む'],
+['come across','偶然出会う・印象を与える'],
+['take over','引き継ぐ・乗っ取る'],
+['cut back on','削減する・縮小する'],
+['keep up with','～についていく・把握し続ける'],
+['get rid of','取り除く・処分する'],
+['make up for','埋め合わせる・補う'],
+['live up to','（期待に）応える・沿う'],
+['build up','積み上げる・強化する・増大する'],
 ];
+
+// ━━━ Word Metadata ━━━
+const POS_MAP = {
+  abandon:'v',absorb:'v',accelerate:'v',access:'v',accommodate:'v',accomplish:'v',
+  accurate:'adj',acknowledge:'v',acquire:'v',adapt:'v',adequate:'adj',address:'v',
+  adjacent:'adj',adjust:'v',administer:'v',administrative:'adj',advance:'v',
+  advertise:'v',advise:'v',affordable:'adj',agenda:'n',agree:'v',agreement:'n',
+  allocate:'v',allowance:'n',alternative:'adj',amend:'v',analyze:'v',announce:'v',
+  annual:'adj',anticipate:'v',apparent:'adj',apply:'v',appoint:'v',appraise:'v',
+  approve:'v',approximately:'adv',archive:'v',arrange:'v',assemble:'v',assess:'v',
+  asset:'n',assign:'v',assist:'v',associate:'n',assume:'v',assure:'v',attend:'v',
+  attract:'v',authorize:'v',available:'adj',aware:'adj',absence:'n',accept:'v',
+  account:'n',accumulate:'v',achieve:'v',activate:'v',additional:'adj',affiliate:'n',
+  affect:'v',alert:'v',align:'v',amendment:'n',amount:'n',appreciate:'v',
+  approval:'n',applicable:'adj',aspect:'n',attendance:'n',audit:'v',automate:'v',
+  award:'n',background:'n',baggage:'n',balance:'n',benchmark:'v',benefit:'n',
+  board:'n',boost:'v',brochure:'n',budget:'n',bulk:'n',bureau:'n',branch:'n',
+  brief:'adj',broker:'n',backup:'n',backlog:'n',billing:'n',campaign:'n',
+  candidate:'n',capable:'adj',capacity:'n',capital:'n',cancellation:'n',carrier:'n',
+  category:'n',certify:'v',challenge:'n',charge:'v',claim:'v',client:'n',
+  collaborate:'v',colleague:'n',commit:'v',compensate:'v',competitive:'adj',
+  comply:'v',conduct:'v',confirm:'v',consecutive:'adj',considerable:'adj',
+  consult:'v',consumer:'n',contact:'v',contract:'n',contribute:'v',convenient:'adj',
+  coordinate:'v',corporate:'adj',correspond:'v',coverage:'n',clarify:'v',
+  classify:'v',commitment:'n',commodity:'n',compensation:'n',complex:'adj',
+  compliance:'n',comprehensive:'adj',concern:'n',conclusion:'n',conference:'n',
+  confidential:'adj',consolidate:'v',construction:'n',cooperation:'n',cost:'n',
+  courier:'n',current:'adj',currency:'n',customer:'n',criteria:'n',deadline:'n',
+  decline:'v',dedicate:'v',defer:'v',delegate:'v',deliver:'v',demonstrate:'v',
+  department:'n',deposit:'n',designate:'v',determine:'v',develop:'v',discount:'n',
+  diverse:'adj',distribute:'v',division:'n',document:'n',draft:'n',duty:'n',
+  deal:'n',default:'n',demand:'n',describe:'v',detail:'n',detect:'v',
+  deteriorate:'v',discipline:'n',dispatch:'v',disposal:'n',downsize:'v',
+  duration:'n',efficiency:'n',efficient:'adj',eligible:'adj',eliminate:'v',
+  employee:'n',encourage:'v',ensure:'v',enterprise:'n',establish:'v',estimate:'v',
+  evaluate:'v',exceed:'v',execute:'v',exempt:'v',exhibit:'v',expand:'v',
+  expenditure:'n',expense:'n',expertise:'n',expire:'v',extend:'v',economy:'n',
+  effective:'adj',effort:'n',engage:'v',enhance:'v',essential:'adj',exchange:'v',
+  explore:'v',export:'v',external:'adj',earn:'v',enforce:'v',enrich:'v',
+  facility:'n',factor:'n',feasible:'adj',feature:'n',feedback:'n',fiscal:'adj',
+  flexible:'adj',forecast:'v',frequent:'adj',frequently:'adv',fulfill:'v',
+  fund:'n',fundamental:'adj',finalize:'v',framework:'n',freight:'n',facilitate:'v',
+  financial:'adj',fluctuate:'v',formal:'adj',formulate:'v',generate:'v',global:'adj',
+  gross:'adj',guarantee:'v',grant:'v',growth:'n',guideline:'n',gather:'v',
+  gain:'v',gradually:'adv',handle:'v',headquarters:'n',highlight:'v',hire:'v',
+  host:'v',harmonize:'v',hazard:'n',hold:'v',implement:'v',import:'v',improve:'v',
+  incentive:'n',indicate:'v',industry:'n',initiative:'n',innovate:'v',inspect:'v',
+  integrate:'v',international:'adj',inventory:'n',invest:'v',invoice:'n',issue:'n',
+  income:'n',increase:'v',inquire:'v',involve:'v',immediate:'adj',impact:'n',
+  infrastructure:'n',insurance:'n',interest:'n',interim:'adj',internal:'adj',
+  introduce:'v',impose:'v',incorporate:'v',incur:'v',individual:'n',inform:'v',
+  interact:'v',justify:'v',jointly:'adv',judgment:'n',launch:'v',lease:'v',
+  legal:'adj',liability:'n',locate:'v',logistics:'n',loyal:'adj',labor:'n',
+  level:'n',liquidate:'v',landmark:'adj',layout:'n',lead:'v',leverage:'v',
+  maintain:'v',manage:'v',mandatory:'adj',manufacture:'v',margin:'n',maximize:'v',
+  merger:'n',milestone:'n',minimize:'v',modify:'v',monitor:'v',mutual:'adj',
+  measure:'v',method:'n',material:'n',media:'n',meeting:'n',member:'n',
+  merchandise:'n',merge:'v',motivate:'v',multinational:'adj',momentum:'n',
+  modernize:'v',negotiate:'v',network:'n',notify:'v',numerous:'adj',note:'v',
+  notice:'v',necessary:'adj',nurture:'v',objective:'n',obtain:'v',operate:'v',
+  opportunity:'n',optimize:'v',organize:'v',outcome:'n',outstanding:'adj',
+  overhead:'n',oversee:'v',overseas:'adj',order:'v',offer:'v',output:'n',
+  outsource:'v',offset:'v',omit:'v',ongoing:'adj',overall:'adj',overtime:'n',
+  participate:'v',partnership:'n',payment:'n',pension:'n',performance:'n',
+  permit:'v',personnel:'n',potential:'adj',predecessor:'n',premium:'n',
+  prioritize:'v',priority:'n',procedure:'n',productive:'adj',profit:'n',
+  promote:'v',proposal:'n',prospect:'n',purchase:'v',process:'n',produce:'v',
+  project:'n',provide:'v',present:'v',prepare:'v',prevent:'v',position:'n',
+  professional:'adj',proactive:'adj',penalty:'n',policy:'n',portfolio:'n',
+  postpone:'v',preliminary:'adj',presentation:'n',profitable:'adj',progress:'n',
+  protocol:'n',provision:'n',patent:'n',periodically:'adv',platform:'n',
+  practical:'adj',principal:'adj',qualify:'v',quarterly:'adj',quota:'n',
+  quality:'n',quantity:'n',quantify:'v',recruit:'v',reduce:'v',regarding:'prep',
+  reimburse:'v',reliable:'adj',relocate:'v',require:'v',resign:'v',resolve:'v',
+  retail:'n',revenue:'n',review:'v',revise:'v',regulation:'n',restructure:'v',
+  report:'v',register:'v',research:'n',respond:'v',retain:'v',return:'v',
+  reconcile:'v',renew:'v',replace:'v',replenish:'v',reschedule:'v',
+  responsibility:'n',restriction:'n',reward:'n',schedule:'n',secure:'v',
+  significant:'adj',streamline:'v',submit:'v',sufficient:'adj',suitable:'adj',
+  supplier:'n',surplus:'n',survey:'n',strategy:'n',structure:'n',subsidiary:'n',
+  succeed:'v',support:'v',select:'v',shift:'v',sign:'v',standard:'n',
+  statement:'n',supply:'v',settlement:'n',staff:'n',stakeholder:'n',stipulate:'v',
+  stock:'n',store:'v',strength:'n',subcontract:'v',subscription:'n',supervisor:'n',
+  sample:'n',savings:'n',scope:'n',seek:'v',segment:'n',senior:'adj',
+  shareholder:'n',showcase:'v',simplify:'v',situation:'n',skill:'n',solution:'n',
+  specify:'v',sponsor:'v',stabilize:'v',status:'n',strict:'adj',summary:'n',
+  target:'v',terminate:'v',transfer:'v',transaction:'n',tremendous:'adj',task:'n',
+  timeline:'n',term:'n',technology:'n',track:'v',train:'v',trend:'n',turnover:'n',
+  temporary:'adj',tender:'v',thorough:'adj',trademark:'n',transport:'v',tackle:'v',
+  talent:'n',transparency:'n',update:'v',utilize:'v',upgrade:'v',urgent:'adj',
+  upcoming:'adj',undertake:'v',unify:'v',uphold:'v',various:'adj',vendor:'n',
+  verify:'v',volunteer:'v',volume:'n',value:'n',viable:'adj',vision:'n',
+  validate:'v',variable:'adj',versatile:'adj',warehouse:'n',wholesale:'adj',
+  withdraw:'v',workforce:'n',workload:'n',workflow:'n',warranty:'n',
+  // travel
+  accommodation:'n',airport:'n',arrival:'n',amenity:'n',booking:'n',concierge:'n',
+  connection:'n',customs:'n',delay:'v',departure:'n',destination:'n',fare:'n',
+  flight:'n',gate:'n',hotel:'n',immigration:'n',itinerary:'n',journey:'n',
+  layover:'n',luggage:'n',passenger:'n',passport:'n',port:'n',rail:'n',
+  receipt:'n',reservation:'n',route:'n',shuttle:'n',terminal:'n',ticket:'n',
+  tour:'n',transit:'n',visa:'n',
+  // finance
+  annuity:'n',arrears:'n',bond:'n',borrow:'v',collateral:'n',commission:'n',
+  credit:'n',debt:'n',depreciate:'v',dividend:'n',equity:'n',investment:'n',
+  liquidity:'n',payroll:'n',prepayment:'n',rebate:'n',tax:'n',treasurer:'n',
+  // hr
+  applicant:'n',application:'n',dismissal:'n',diversity:'n',downsizing:'n',
+  employment:'n',evaluation:'n',experience:'n',freelance:'adj',interview:'n',
+  leave:'n',mentoring:'n',orientation:'n',probation:'n',promotion:'n',
+  recruitment:'n',reference:'n',relocation:'n',retire:'v',salary:'n',
+  severance:'n',training:'n',vacancy:'n',
+  // marketing
+  demographics:'n',endorsement:'n',exhibition:'n',niche:'n',outreach:'n',
+  pitch:'n',pricing:'n',publicity:'n',slogan:'n',testimonial:'n',
+  // office
+  attachment:'n',briefing:'n',chairperson:'n',minutes:'n',notarize:'v',
+  official:'adj',paperwork:'n',proofread:'v',proxy:'n',recipient:'n',
+  signature:'n',template:'n',
+  // manufacturing
+  defect:'n',factory:'n',inspection:'n',install:'v',maintenance:'n',prototype:'n',
+  recall:'v',safety:'n',specification:'n',tolerance:'n',yield:'n',
+  // misc
+  concise:'adj',convene:'v',crucial:'adj',disclose:'v',discrepancy:'n',dispose:'v',
+  effectively:'adv',endeavor:'v',excess:'n',expedite:'v',findings:'n',
+  fluctuation:'n',forthcoming:'adj',immediately:'adv',inclusive:'adj',
+  // v2 additions
+  algorithm:'n',authentication:'n',bandwidth:'n',bug:'n',cloud:'n',
+  cybersecurity:'n',dashboard:'n',database:'n',deploy:'v',encryption:'n',
+  firewall:'n',interface:'n',scalability:'n',server:'n',software:'n',
+  synchronize:'v',troubleshoot:'v',upload:'v',virtual:'adj',wireless:'adj',
+  agile:'adj',bottleneck:'n',insight:'n',lean:'adj',roadmap:'n',scalable:'adj',
+  synergy:'n',turnaround:'n',influencer:'n',persona:'n',arbitration:'n',
+  clause:'n',disclaimer:'n',enforceable:'adj',jurisdiction:'n',litigation:'n',
+  statute:'n',waiver:'n',whistleblower:'n',assertive:'adj',empathy:'n',
+  mediate:'v',persuade:'v',rapport:'n',escalation:'n',hospitality:'n',
+  coaching:'n',competency:'n',headcount:'n',
+  // website words
+  pursue:'v',labor:'n',explain:'v',anyway:'adv',experiment:'n',degree:'n',
+  replace:'v',relatively:'adv',infer:'v',recognize:'v',reinforce:'v',allow:'v',
+  refer:'v',despite:'prep',cause:'v',obey:'v',reward:'v',commercial:'adj',
+  prefer:'v',occupy:'v',compare:'v',agency:'n',release:'v',remove:'v',relax:'v',
+  profitable:'adj',decision:'n',destroy:'v',graduate:'v',postpone:'v',empty:'v',
+  pleased:'adj',entertain:'v',argue:'v',likely:'adv',illustrate:'v',state:'v',
+  recommend:'v',basis:'n',examine:'v',suffer:'v',propose:'v',environmental:'adj',
+  clothing:'n',apologize:'v',carry:'v',browse:'v',display:'v',tradition:'n',
+  satisfy:'v',represent:'v',local:'adj',exclude:'v',possess:'v',institute:'v',
+  resume:'v',overlook:'v',session:'n',transform:'v',instruct:'v',dispute:'v',
+  process:'n',simulate:'v',subscribe:'v',instruction:'n',correct:'v',
+  membership:'n',loosen:'v',advance:'adj',focus:'v',committee:'n',result:'n',
+  successful:'adj',mail:'v',excellent:'adj',fine:'adj',fee:'n',admiration:'n',
+  delivery:'n',availability:'n',transportation:'n',executive:'n',recently:'adv',
+  previous:'adj',regularly:'adv',blame:'v',enclose:'v',impression:'n',
+  struggle:'v',bill:'n',employer:'n',fire:'v',valuable:'adj',publication:'n',
+  commute:'v',generous:'adj',information:'n',attain:'v',treat:'v',direct:'v',
+  graduation:'n',relationship:'n',emphasize:'v',corporation:'n',repair:'n',
+  recover:'v',article:'n',contribution:'n',renovate:'v',confess:'v',contain:'v',
+  reduction:'n',regard:'v',include:'v',remain:'v',fix:'v',greet:'v',consider:'v',
+  solve:'v',activity:'n',refuse:'v',counsel:'v',advertising:'n',reflect:'v',
+  achievement:'n',correctly:'adv',damage:'n',stack:'v',expect:'v',appliance:'n',
+  connect:'v',saving:'n',prove:'v',firm:'n',rank:'v',pour:'v',analysis:'n',
+  hesitate:'v',selection:'n',attention:'n',vote:'v',feed:'v',ladder:'n',
+  object:'v',
+  // idioms
+  'as soon as possible':'ph','at your convenience':'ph','come up with':'ph',
+  'deal with':'ph','find out':'ph','get back to':'ph','keep in mind':'ph',
+  'look forward to':'ph','look into':'ph','make sure':'ph','set up':'ph',
+  'take care of':'ph','take into account':'ph','on behalf of':'ph',
+  'in charge of':'ph','in addition to':'ph','in advance':'ph','due to':'ph',
+  'carry out':'ph','hand in':'ph','run out of':'ph','turn down':'ph',
+  'ahead of schedule':'ph','fall behind':'ph','cut costs':'ph',
+  'reach an agreement':'ph','break even':'ph','call off':'ph','up to date':'ph',
+  'out of stock':'ph','free of charge':'ph','out of order':'ph','on schedule':'ph',
+  'in line with':'ph','subject to':'ph','work out':'ph','pick up':'ph',
+  'point out':'ph','put off':'ph','rely on':'ph','take on':'ph',
+  'take part in':'ph','bring about':'ph','catch up on':'ph','draw up':'ph',
+  'look after':'ph','in the long run':'ph','meet a deadline':'ph',
+  'make a profit':'ph','with regard to':'ph','regardless of':'ph',
+  'prior to':'ph','in the event of':'ph','at no extra cost':'ph',
+  'under construction':'ph','follow through':'ph',
+};
+
+const EXAMPLE_TEMPLATES = {
+  v:['We need to {w} this as soon as possible.',
+     'Please {w} the report before the deadline.',
+     'The team decided to {w} the project.',
+     'Can you {w} this before the meeting?',
+     'They agreed to {w} the proposal.'],
+  n:['The {w} was approved by management.',
+     'Please review the {w} carefully.',
+     'We discussed the {w} at the meeting.',
+     'The {w} is due by end of the week.',
+     'Our {w} needs to be improved.'],
+  adj:['This is a {w} opportunity for our company.',
+       'We found a {w} solution to the problem.',
+       'Please make sure the data is {w}.',
+       'The results were quite {w}.',
+       'We need a {w} approach to this issue.'],
+  adv:['Please complete the task {w}.',
+       'We need to respond {w}.',
+       'The project progressed {w}.',
+       'They {w} addressed all concerns.',
+       'Please review the documents {w}.'],
+  prep:['This policy applies {w} all employees.',
+        'We will proceed {w} the original plan.'],
+  ph:['Could you {w} the details for me?',
+      'Let\'s {w} before the deadline.',
+      'We need to {w} on this matter.'],
+};
+
+const EXAMPLES = {
+  pursue:['We will pursue new business opportunities in Asia.','They decided to pursue a different strategy.'],
+  achieve:['We achieved our quarterly sales targets.','The team worked hard to achieve their goals.'],
+  conduct:['We will conduct a survey to understand customer needs.','Please conduct the meeting efficiently.'],
+  negotiate:['We need to negotiate better contract terms with the supplier.','Both sides agreed to negotiate a settlement.'],
+  submit:['Please submit your expense report by Friday.','All applications must be submitted online.'],
+  confirm:['Please confirm your attendance by tomorrow.','Could you confirm the meeting time?'],
+  evaluate:['We will evaluate the results at the end of Q3.','Please evaluate the proposal carefully.'],
+  implement:['We plan to implement the new system next month.','The changes will be implemented gradually.'],
+  streamline:['We need to streamline the approval process.','The new system streamlines daily operations.'],
+  coordinate:['Please coordinate with other departments on this.','She coordinates all client meetings.'],
+  allocate:['We will allocate more resources to this project.','The budget was allocated across three departments.'],
+  monitor:['We need to monitor the project progress closely.','The system monitors performance in real time.'],
+  revise:['Please revise the proposal based on our feedback.','The schedule was revised to meet the new deadline.'],
+  facilitate:['She will facilitate the workshop sessions.','This platform facilitates better team communication.'],
+  'as soon as possible':['Please send the signed documents as soon as possible.','I need this report as soon as possible.'],
+  'at your convenience':['Please call me back at your convenience.','Feel free to stop by at your convenience.'],
+  'come up with':['We need to come up with a better solution by Friday.','Can you come up with some ideas for the campaign?'],
+  'deal with':['We need to deal with this customer complaint immediately.','How do you plan to deal with the budget shortfall?'],
+  'find out':['Please find out when the shipment will arrive.','I\'ll find out who is responsible for this issue.'],
+  'get back to':['I\'ll get back to you with the full details by end of day.','Could you get back to me as soon as possible?'],
+  'keep in mind':['Please keep in mind that the deadline is this Friday.','Keep in mind that the budget is limited.'],
+  'look forward to':['We look forward to hearing from you soon.','I look forward to meeting you at the conference.'],
+  'look into':['We will look into this issue and respond shortly.','Please look into the possibility of reducing costs.'],
+  'make sure':['Please make sure all documents are signed before submission.','Make sure to back up your data regularly.'],
+  'set up':['Can you set up a meeting for next Tuesday?','We need to set up the presentation equipment in advance.'],
+  'take care of':['I will take care of the travel arrangements.','Who is taking care of the client onboarding?'],
+  'take into account':['Please take into account the shipping time when planning.','We need to take all risks into account before proceeding.'],
+  'on behalf of':['I am writing on behalf of the CEO.','Please accept this award on behalf of the entire team.'],
+  'in charge of':['Who is in charge of this marketing project?','She is in charge of all customer relations.'],
+  'in addition to':['In addition to the base salary, we offer excellent benefits.','In addition to English, candidates should speak Japanese.'],
+  'in advance':['Please reserve your seat in advance.','Could you send the meeting agenda in advance?'],
+  'due to':['The flight was delayed due to bad weather.','Due to high demand, delivery may take 2–3 extra days.'],
+  'carry out':['We will carry out the plan exactly as scheduled.','The team carried out the experiment successfully.'],
+  'hand in':['Please hand in your report by 5 PM on Monday.','All application forms must be handed in before Friday.'],
+  'run out of':['We are running out of printer paper.','We almost ran out of time before the presentation.'],
+  'turn down':['The board turned down the acquisition proposal.','She turned down the job offer for personal reasons.'],
+  'ahead of schedule':['The project was completed two days ahead of schedule.','We are currently ahead of schedule.'],
+  'fall behind':['We cannot afford to fall behind on this project.','We fell behind schedule due to unexpected system issues.'],
+  'cut costs':['We need to find effective ways to cut costs.','The company cut costs by reducing business travel.'],
+  'reach an agreement':['Both parties were able to reach an agreement.','We hope to reach an agreement before the end of the month.'],
+  'break even':['We expect to break even by the end of Q3.','The new branch managed to break even in its first year.'],
+  'call off':['The outdoor event was called off due to heavy rain.','They had to call off the merger at the last minute.'],
+  'up to date':['Please keep your contact information up to date.','Make sure all software is up to date before the audit.'],
+  'out of stock':['The item you ordered is currently out of stock.','This model has been out of stock for two weeks.'],
+  'free of charge':['Delivery is free of charge for orders over ¥10,000.','We will replace the defective unit free of charge.'],
+  'out of order':['The elevator is out of order until further notice.','One of the office printers is out of order.'],
+  'on schedule':['The construction project is progressing on schedule.','Everything is on schedule for the product launch.'],
+  'in line with':['Our pricing is in line with current market standards.','Please ensure the proposal is in line with company policy.'],
+  'subject to':['This offer is subject to board approval.','All listed prices are subject to change without notice.'],
+};
+
+function getPos(eng) { return POS_MAP[eng.toLowerCase()] || ''; }
+function posLabel(pos) {
+  return {v:'動詞',n:'名詞',adj:'形容詞',adv:'副詞',prep:'前置詞',ph:'熟語'}[pos] || '';
+}
+function getRandomExample(eng, pos) {
+  var key = eng.toLowerCase();
+  if (EXAMPLES[key] && EXAMPLES[key].length) {
+    var e = EXAMPLES[key]; return e[Math.floor(Math.random()*e.length)];
+  }
+  var t = EXAMPLE_TEMPLATES[pos] || EXAMPLE_TEMPLATES.n;
+  return t[Math.floor(Math.random()*t.length)].replace(/\{w\}/g, eng);
+}
+function highlightWord(sentence, word) {
+  if (!sentence || !word) return esc(sentence);
+  var s = esc(sentence);
+  var re = new RegExp('('+word.replace(/[-\/\\^$*+?.()|[\]{}]/g,'\\$&')+')','gi');
+  return s.replace(re,'<mark>$1</mark>');
+}
 
 // ━━━ State ━━━
 let words = JSON.parse(localStorage.getItem('vocabWords') || '[]');
 let fcResults = JSON.parse(localStorage.getItem('fcResults') || '{}');
 let editId = null;
-let study = { order:[], idx:0, attempt:1, shuffled:false, showMeaning:false };
+let study = { order:[], idx:0, attempt:1, shuffled:false };
 let fc = { refs:[], order:[], idx:0, flipped:false, filter:'all' };
 
 // ━━━ Boot ━━━
@@ -752,7 +1137,7 @@ function renderList() {
     return;
   }
   el.innerHTML = `<div class="word-count">${fl.length} / ${words.length}語</div>` +
-    fl.map(w => `<div class="word-card"><div style="flex:1"><div class="word-english">${esc(w.eng)}</div><div class="word-japanese">${esc(w.jpn)}</div></div><div class="word-actions"><button class="icon-btn" onclick="speakWord(this.dataset.word)" data-word="${esc(w.eng)}" title="発音">🔊</button><button class="icon-btn" onclick="openModal(${w.id})">✏️</button><button class="icon-btn del" onclick="deleteWord(${w.id})">🗑️</button></div></div>`).join('');
+    fl.map(w => { const pl=posLabel(getPos(w.eng)); return `<div class="word-card"><div style="flex:1"><div class="word-english">${esc(w.eng)}${pl?`<span class="pos-tag">${pl}</span>`:''}</div><div class="word-japanese">${esc(w.jpn)}</div></div><div class="word-actions"><button class="icon-btn" onclick="speakWord(this.dataset.word)" data-word="${esc(w.eng)}" title="発音">🔊</button><button class="icon-btn" onclick="openModal(${w.id})">✏️</button><button class="icon-btn del" onclick="deleteWord(${w.id})">🗑️</button></div></div>`; }).join('');
 }
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -809,6 +1194,7 @@ function renderCard() {
   document.getElementById('cardEng').textContent  = w.eng;
   document.getElementById('cardEngB').textContent = w.eng;
   document.getElementById('cardJpn').textContent  = w.jpn;
+  document.getElementById('cardPos').textContent  = posLabel(getPos(w.eng));
   document.getElementById('fcCounter').textContent = `${fc.idx + 1} / ${fc.order.length}`;
   const r = fcResults[w.eng];
   document.getElementById('cardBadge').textContent = r === 'known' ? '✓' : r === 'unknown' ? '✗' : '';
@@ -885,28 +1271,24 @@ function initStudy() {
 function resetOrder() {
   study.order = words.map((_,i) => i);
   if (study.shuffled) study.order.sort(() => Math.random() - .5);
-  study.idx = 0; study.attempt = 1; study.showMeaning = false;
+  study.idx = 0; study.attempt = 1;
 }
 function curWord() { return words[study.order[study.idx % study.order.length]]; }
 function renderStudy() {
   const w = curWord(); if (!w) return;
-  study.showMeaning = false;
   document.getElementById('wordDisplay').textContent = w.eng;
-  updateMeaningBtn(w); renderDots(); updateNextBtn();
+  // POS badge
+  const pos = getPos(w.eng);
+  const pl  = posLabel(pos);
+  const badge = document.getElementById('posBadge');
+  badge.textContent = pl; badge.style.display = pl ? 'inline-block' : 'none';
+  // Meaning (always visible, big)
+  document.getElementById('meaningBig').textContent = w.jpn;
+  // Random example sentence
+  const ex = getRandomExample(w.eng, pos);
+  document.getElementById('exampleArea').innerHTML = highlightWord(ex, w.eng);
+  renderDots(); updateNextBtn();
 }
-function updateMeaningBtn(w) {
-  const shown = study.showMeaning;
-  const reveal = document.getElementById('meaningReveal');
-  if (shown && w) {
-    reveal.textContent = w.jpn || '—';
-    reveal.style.display = 'block';
-  } else {
-    reveal.style.display = 'none';
-  }
-  document.getElementById('meaningText').textContent = shown ? '意味を隠す' : '意味を見る';
-  document.getElementById('meaningBtn').classList.toggle('shown', shown);
-}
-function toggleMeaning() { study.showMeaning = !study.showMeaning; updateMeaningBtn(curWord()); }
 function renderDots() {
   document.getElementById('dots').innerHTML = Array.from({length:5},(_,i) => {
     const n=i+1; const c = n<study.attempt?'done':n===study.attempt?'current':'';
@@ -923,26 +1305,31 @@ function nextAttempt() {
   if (study.attempt < 5) { study.attempt++; clearCanvas(); renderDots(); updateNextBtn(); }
   else showCompletion();
 }
+var _cmpTimer = null;
 function showCompletion() {
   const w = curWord();
   document.getElementById('cmpWord').textContent = w.eng + (w.jpn ? ' — ' + w.jpn : '');
   document.getElementById('cmpOverlay').classList.add('open');
+  if (_cmpTimer) clearTimeout(_cmpTimer);
+  _cmpTimer = setTimeout(function() { nextWord(); }, 1500);
 }
 function restartWord() {
+  if (_cmpTimer) { clearTimeout(_cmpTimer); _cmpTimer = null; }
   document.getElementById('cmpOverlay').classList.remove('open');
-  study.attempt = 1; study.showMeaning = false; clearCanvas(); renderStudy();
+  study.attempt = 1; clearCanvas(); renderStudy();
 }
 function nextWord() {
+  if (_cmpTimer) { clearTimeout(_cmpTimer); _cmpTimer = null; }
   document.getElementById('cmpOverlay').classList.remove('open');
   study.idx = (study.idx + 1) % words.length;
-  study.attempt = 1; study.showMeaning = false; clearCanvas(); renderStudy();
+  study.attempt = 1; clearCanvas(); renderStudy();
 }
 function toggleShuffle() {
   study.shuffled = !study.shuffled;
   document.getElementById('shuffleBtn').classList.toggle('on', study.shuffled);
   document.getElementById('shuffleLabel').textContent = study.shuffled ? 'シャッフルON' : 'シャッフルOFF';
   resetOrder();
-  if (document.getElementById('studyTab').classList.contains('active')) { renderStudy(); clearCanvas(); }
+  if (document.getElementById('studyTab').classList.contains('active')) { clearCanvas(); renderStudy(); }
 }
 
 // ━━━ Pronunciation ━━━
