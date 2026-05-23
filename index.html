@@ -555,7 +555,7 @@ function switchTab(tab) {
     if (btn) btn.classList.toggle('active', t === tab);
     document.getElementById(t + 'Tab').classList.toggle('active', t === tab);
   });
-  if (tab === 'study') { initStudy(); requestAnimationFrame(() => requestAnimationFrame(resizeCanvas)); }
+  if (tab === 'study') { initStudy(); requestAnimationFrame(() => requestAnimationFrame(initCtx)); }
   if (tab === 'card')  initFC();
 }
 
@@ -762,47 +762,45 @@ function toggleShuffle() {
 // ━━━ Canvas Drawing ━━━
 let canvas, ctx, drawing = false, lastX = 0, lastY = 0;
 
+function initCtx() {
+  if (!canvas) canvas = document.getElementById('drawCanvas');
+  const wrap = document.getElementById('canvasWrap');
+  const w = wrap.offsetWidth, h = wrap.offsetHeight;
+  if (!w || !h) return false;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+  ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.strokeStyle = '#1a1a2e'; ctx.fillStyle = '#1a1a2e';
+  ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  return true;
+}
+
+function penDown(clientX, clientY) {
+  if (!ctx) initCtx();
+  if (!ctx) return;
+  const r = document.getElementById('canvasWrap').getBoundingClientRect();
+  const x = clientX - r.left, y = clientY - r.top;
+  drawing = true; lastX = x; lastY = y;
+  ctx.beginPath(); ctx.arc(x, y, 2, 0, Math.PI*2); ctx.fill();
+}
+
+function penMove(clientX, clientY) {
+  if (!drawing || !ctx) return;
+  const r = document.getElementById('canvasWrap').getBoundingClientRect();
+  const x = clientX - r.left, y = clientY - r.top;
+  ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke();
+  lastX = x; lastY = y;
+}
+
+function penUp() { drawing = false; }
+
 function setupCanvas() {
   canvas = document.getElementById('drawCanvas');
   const wrap = document.getElementById('canvasWrap');
   wrap.style.touchAction = 'none';
 
-  function initCtx() {
-    const w = wrap.offsetWidth, h = wrap.offsetHeight;
-    if (!w || !h) return false;
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = w * dpr; canvas.height = h * dpr;
-    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
-    ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-    ctx.strokeStyle = '#1a1a2e'; ctx.fillStyle = '#1a1a2e';
-    ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    return true;
-  }
-
-  function getPos(clientX, clientY) {
-    const r = wrap.getBoundingClientRect();
-    return { x: clientX - r.left, y: clientY - r.top };
-  }
-
-  function penDown(clientX, clientY) {
-    if (!ctx) initCtx();
-    if (!ctx) return;
-    const p = getPos(clientX, clientY);
-    drawing = true; lastX = p.x; lastY = p.y;
-    ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI*2); ctx.fill();
-  }
-
-  function penMove(clientX, clientY) {
-    if (!drawing || !ctx) return;
-    const p = getPos(clientX, clientY);
-    ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke();
-    lastX = p.x; lastY = p.y;
-  }
-
-  function penUp() { drawing = false; }
-
-  // Touch events (canvasWrapで受け取る)
   wrap.addEventListener('touchstart', function(e) {
     e.preventDefault();
     var t = e.changedTouches[0]; if (!t) return;
@@ -816,7 +814,6 @@ function setupCanvas() {
   wrap.addEventListener('touchend',    penUp);
   wrap.addEventListener('touchcancel', penUp);
 
-  // Pointer events (mouse/Apple Pencil)
   wrap.addEventListener('pointerdown', function(e) {
     if (e.pointerType === 'touch') return;
     e.preventDefault(); penDown(e.clientX, e.clientY);
@@ -827,11 +824,10 @@ function setupCanvas() {
   });
   wrap.addEventListener('pointerup',     function(e) { if (e.pointerType !== 'touch') penUp(); });
   wrap.addEventListener('pointercancel', function(e) { if (e.pointerType !== 'touch') penUp(); });
-
-  initCtx();
 }
 
 function runDiag() {
+  if (!ctx) initCtx();
   const wrap = document.getElementById('canvasWrap');
   const wr = wrap ? wrap.getBoundingClientRect() : null;
   let msg = 'Canvas: ' + (canvas ? canvas.width + 'x' + canvas.height : 'null') +
