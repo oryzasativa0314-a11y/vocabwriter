@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>英単語ライター</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #3b82f6; --primary-dk: #2563eb;
+      --success: #10b981; --danger: #ef4444; --orange: #f97316;
+      --bg: #f1f5f9; --card: #ffffff; --text: #1e293b; --text2: #64748b;
+      --border: #e2e8f0; --shadow: 0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06); --r: 12px;
+    }
+    html,body { height:100%; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); overflow:hidden; }
+    #app { display:flex; flex-direction:column; height:100dvh; }
+    header { background:var(--card); border-bottom:1px solid var(--border); padding:0 20px; flex-shrink:0; }
+    .header-top { display:flex; align-items:center; justify-content:space-between; padding:10px 0 6px; }
+    .app-title { font-size:20px; font-weight:800; }
+    .tabs { display:flex; gap:2px; }
+    .tab-btn { padding:8px 18px; border:none; background:transparent; border-bottom:3px solid transparent; font-size:14px; font-weight:500; color:var(--text2); cursor:pointer; transition:all .2s; white-space:nowrap; }
+    .tab-btn.active { color:var(--primary); border-bottom-color:var(--primary); }
+    #content { flex:1; overflow:hidden; }
+    .tab-panel { display:none; height:100%; flex-direction:column; overflow-y:auto; }
+    .tab-panel.active { display:flex; }
+
+    /* Buttons */
+    .btn { padding:10px 18px; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:filter .15s,background .15s; white-space:nowrap; }
+    .btn:hover { filter:brightness(1.08); } .btn:active { filter:brightness(.95); }
+    .btn-primary  { background:var(--primary);  color:#fff; }
+    .btn-success  { background:var(--success);  color:#fff; }
+    .btn-orange   { background:var(--orange);   color:#fff; }
+    .btn-outline  { background:transparent; color:var(--text2); border:1px solid var(--border); }
+    .btn-red-soft { background:#fee2e2; color:var(--danger); border:none; }
+    .btn-grn-soft { background:#d1fae5; color:var(--success); border:none; }
+    .btn-lg { padding:14px 28px; font-size:16px; border-radius:10px; min-width:140px; justify-content:center; }
+    .icon-btn { width:34px; height:34px; border:none; background:transparent; border-radius:8px; cursor:pointer; font-size:15px; color:var(--text2); transition:background .15s; }
+    .icon-btn:hover { background:var(--bg); }
+    .icon-btn.del:hover { background:#fee2e2; }
+
+    /* List tab */
+    .list-toolbar { padding:12px 20px 8px; display:flex; gap:8px; flex-shrink:0; }
+    .search-input { flex:1; padding:9px 14px; border:1px solid var(--border); border-radius:8px; font-size:15px; background:var(--card); outline:none; transition:border-color .2s; }
+    .search-input:focus { border-color:var(--primary); }
+    .word-list { flex:1; padding:0 20px 24px; display:flex; flex-direction:column; gap:8px; }
+    .word-count { font-size:13px; color:var(--text2); padding:2px 0 6px; }
+    .word-card { background:var(--card); border-radius:var(--r); padding:12px 16px; display:flex; align-items:center; gap:12px; box-shadow:var(--shadow); border:1px solid var(--border); }
+    .word-english { font-size:17px; font-weight:600; }
+    .word-japanese { font-size:13px; color:var(--text2); margin-top:2px; }
+    .word-actions { display:flex; gap:4px; flex-shrink:0; }
+    .empty-state { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--text2); padding:40px; text-align:center; }
+    .empty-icon { font-size:56px; opacity:.4; }
+    .empty-title { font-size:18px; font-weight:600; color:var(--text); }
+
+    /* ── Flashcard tab ── */
+    #cardTab { overflow:hidden; }
+    #cardInner2 { display:flex; flex-direction:column; height:100%; overflow:hidden; }
+    .fc-toolbar { display:flex; align-items:center; gap:10px; padding:10px 20px; border-bottom:1px solid var(--border); background:var(--card); flex-shrink:0; flex-wrap:wrap; }
+    .fc-stats { font-size:13px; font-weight:600; color:var(--text2); flex:1; }
+    .fc-filters { display:flex; gap:6px; }
+    .filt-btn { padding:5px 14px; border:1.5px solid var(--border); border-radius:20px; background:transparent; font-size:13px; font-weight:600; cursor:pointer; color:var(--text2); transition:all .2s; }
+    .filt-btn.on { border-color:var(--primary); color:var(--primary); background:rgba(59,130,246,.08); }
+    .fc-counter { text-align:center; font-size:13px; color:var(--text2); font-weight:500; padding:8px 0 4px; flex-shrink:0; }
+    .card-scene { flex:1; min-height:0; margin:0 20px; perspective:1000px; cursor:pointer; user-select:none; }
+    .card-flip { width:100%; height:100%; position:relative; transform-style:preserve-3d; transition:transform .45s cubic-bezier(.4,0,.2,1); }
+    .card-flip.flipped { transform:rotateY(180deg); }
+    .card-face { position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; background:var(--card); border-radius:16px; border:1px solid var(--border); box-shadow:0 4px 24px rgba(0,0,0,.08); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px; }
+    .card-back-face { transform:rotateY(180deg); }
+    .card-badge { position:absolute; top:14px; right:16px; font-size:18px; }
+    .card-eng { font-size:clamp(28px,7vw,56px); font-weight:800; text-align:center; line-height:1.1; }
+    .card-hint-txt { font-size:13px; color:var(--text2); margin-top:14px; }
+    .card-eng-sm { font-size:clamp(16px,3vw,26px); font-weight:600; color:var(--text2); text-align:center; }
+    .card-sep { width:50px; height:2px; background:var(--border); margin:14px 0; }
+    .card-jpn { font-size:clamp(22px,5vw,42px); font-weight:700; text-align:center; line-height:1.2; }
+    .fc-nav { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; flex-shrink:0; gap:10px; }
+    .mark-btns { display:flex; gap:10px; }
+    .fc-keys { text-align:center; font-size:11px; color:var(--text2); padding:0 20px 10px; flex-shrink:0; }
+
+    /* Study tab */
+    #studyTab { overflow:hidden; }
+    #studyInner { display:flex; flex-direction:column; height:100%; overflow:hidden; }
+    #noStudy { display:flex; flex-direction:column; flex:1; align-items:center; justify-content:center; gap:12px; color:var(--text2); padding:40px; text-align:center; }
+    .study-header { text-align:center; padding:18px 24px 12px; background:var(--card); border-bottom:1px solid var(--border); flex-shrink:0; }
+    .word-display { font-size:clamp(34px,9vw,62px); font-weight:800; letter-spacing:-.5px; margin-bottom:10px; }
+    .meaning-btn { background:transparent; border:1.5px solid var(--primary); color:var(--primary); padding:6px 18px; border-radius:20px; font-size:14px; font-weight:500; cursor:pointer; transition:all .2s; }
+    .meaning-btn.shown { background:var(--primary); color:#fff; }
+    .progress-area { display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 0; flex-shrink:0; }
+    .dots { display:flex; gap:12px; }
+    .dot { width:14px; height:14px; border-radius:50%; background:var(--border); transition:all .3s; }
+    .dot.done { background:var(--primary); } .dot.current { background:rgba(59,130,246,.45); transform:scale(1.3); }
+    .attempt-label { font-size:13px; color:var(--text2); font-weight:500; }
+    .canvas-wrap { flex:1; min-height:0; margin:0 20px; border-radius:var(--r); overflow:hidden; position:relative; background:#fafafa; border:1px solid var(--border); background-image:repeating-linear-gradient(to bottom,transparent,transparent calc(100%/7 - 1px),rgba(59,130,246,.12) calc(100%/7 - 1px),rgba(59,130,246,.12) calc(100%/7)); touch-action:none; cursor:crosshair; }
+    #drawCanvas { position:absolute; inset:0; width:100%; height:100%; touch-action:none; }
+    .study-btns { display:flex; justify-content:center; gap:16px; padding:14px 20px; flex-shrink:0; }
+    .shuffle-btn { background:transparent; border:1.5px solid var(--border); border-radius:8px; padding:5px 12px; font-size:13px; font-weight:600; color:var(--text2); cursor:pointer; display:flex; align-items:center; gap:6px; transition:all .2s; }
+    .shuffle-btn.on { border-color:var(--primary); color:var(--primary); background:rgba(59,130,246,.07); }
+
+    /* Modal */
+    .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:100; align-items:center; justify-content:center; padding:20px; }
+    .overlay.open { display:flex; }
+    .modal { background:var(--card); border-radius:16px; padding:28px; width:100%; max-width:420px; box-shadow:0 20px 60px rgba(0,0,0,.2); animation:mIn .2s ease; }
+    @keyframes mIn { from{opacity:0;transform:scale(.95) translateY(-8px)} to{opacity:1;transform:none} }
+    .modal-title { font-size:20px; font-weight:700; margin-bottom:20px; }
+    .field { margin-bottom:16px; }
+    .field label { display:block; font-size:12px; font-weight:700; color:var(--text2); margin-bottom:6px; text-transform:uppercase; letter-spacing:.06em; }
+    .field input { width:100%; padding:12px 14px; border:1.5px solid var(--border); border-radius:8px; font-size:16px; outline:none; transition:border-color .2s; }
+    .field input:focus { border-color:var(--primary); }
+    .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:24px; }
+
+    /* Completion overlay */
+    #cmpOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:200; align-items:center; justify-content:center; }
+    #cmpOverlay.open { display:flex; }
+    .cmp-card { background:#fff; border-radius:24px; padding:40px; text-align:center; max-width:360px; width:90%; box-shadow:0 24px 80px rgba(0,0,0,.25); animation:cIn .4s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes cIn { from{opacity:0;transform:scale(.65)} to{opacity:1;transform:scale(1)} }
+    .cmp-star { font-size:72px; display:block; margin-bottom:16px; animation:sBounce .6s cubic-bezier(.34,1.56,.64,1) .15s both; }
+    @keyframes sBounce { from{transform:scale(0) rotate(-30deg)} to{transform:scale(1) rotate(0)} }
+    .cmp-title { font-size:28px; font-weight:800; margin-bottom:8px; }
+    .cmp-word  { font-size:18px; font-weight:600; color:var(--primary); margin-bottom:24px; }
+    .cmp-btns  { display:flex; gap:12px; justify-content:center; }
+    ::-webkit-scrollbar { width:5px; }
+    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="header-top">
+      <span class="app-title">✏️ 英単語ライター</span>
+      <button class="shuffle-btn" id="shuffleBtn" onclick="toggleShuffle()">🔀 <span id="shuffleLabel">シャッフルOFF</span></button>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" id="tabList"  onclick="switchTab('list')">📋 単語リスト</button>
+      <button class="tab-btn"        id="tabCard"  onclick="switchTab('card')">🃏 フラッシュカード</button>
+      <button class="tab-btn"        id="tabStudy" onclick="switchTab('study')">✍️ 練習</button>
+    </div>
+  </header>
+
+  <div id="content">
+    <!-- List -->
+    <div class="tab-panel active" id="listTab">
+      <div class="list-toolbar">
+        <input class="search-input" id="searchInput" type="search" placeholder="🔍 単語を検索..." oninput="renderList()">
+        <button class="btn btn-outline" onclick="addToeic()" title="TOEIC単語を一括追加">TOEIC追加</button>
+        <button class="btn btn-primary" onclick="openModal()">＋ 追加</button>
+      </div>
+      <div class="word-list" id="wordList"></div>
+    </div>
+
+    <!-- Flashcard -->
+    <div class="tab-panel" id="cardTab">
+      <div id="cardInner2">
+        <div class="fc-toolbar">
+          <span class="fc-stats" id="fcStats"></span>
+          <div class="fc-filters">
+            <button class="filt-btn on" id="filtAll"     onclick="setFilt('all')">全て</button>
+            <button class="filt-btn"    id="filtUnknown" onclick="setFilt('unknown')">未習得のみ</button>
+          </div>
+          <button class="icon-btn" onclick="shuffleFC()" title="シャッフル">🔀</button>
+          <button class="icon-btn" onclick="resetFC()"   title="リセット">↺</button>
+        </div>
+        <div class="fc-counter" id="fcCounter"></div>
+        <div class="card-scene" id="cardScene" onclick="flipCard()">
+          <div class="card-flip" id="cardFlip">
+            <div class="card-face">
+              <div class="card-badge" id="cardBadge"></div>
+              <div class="card-eng"  id="cardEng"></div>
+              <div class="card-hint-txt">クリックして意味を確認</div>
+            </div>
+            <div class="card-face card-back-face">
+              <div class="card-eng-sm" id="cardEngB"></div>
+              <div class="card-sep"></div>
+              <div class="card-jpn"   id="cardJpn"></div>
+            </div>
+          </div>
+        </div>
+        <div class="fc-nav">
+          <button class="btn btn-outline" onclick="prevCard()">← 前へ</button>
+          <div class="mark-btns" id="markBtns" style="display:none">
+            <button class="btn btn-red-soft" onclick="markCard('unknown')">✗ 知らなかった</button>
+            <button class="btn btn-grn-soft" onclick="markCard('known')">✓ 知ってた</button>
+          </div>
+          <button class="btn btn-outline" onclick="nextCard()">次へ →</button>
+        </div>
+        <div class="fc-keys">Space: めくる &nbsp;|&nbsp; K: 知ってた &nbsp;|&nbsp; X: 知らなかった &nbsp;|&nbsp; ←→: ナビ</div>
+      </div>
+      <div id="fcEmpty" class="empty-state" style="display:none">
+        <div class="empty-icon">🎉</div>
+        <div class="empty-title">全て習得済み！</div>
+        <div>「全て」に切り替えるかリセットしてください</div>
+        <button class="btn btn-primary" onclick="setFilt('all')" style="margin-top:12px">全て表示</button>
+      </div>
+      <div id="fcNoWords" class="empty-state" style="display:none">
+        <div class="empty-icon">📚</div>
+        <div class="empty-title">単語がありません</div>
+        <button class="btn btn-primary" onclick="switchTab('list')" style="margin-top:12px">単語を追加</button>
+      </div>
+    </div>
+
+    <!-- Study -->
+    <div class="tab-panel" id="studyTab">
+      <div id="studyInner">
+        <div class="study-header">
+          <div class="word-display" id="wordDisplay"></div>
+          <button class="meaning-btn" id="meaningBtn" onclick="toggleMeaning()">👁 <span id="meaningText">意味を見る</span></button>
+        </div>
+        <div class="progress-area">
+          <div class="dots" id="dots"></div>
+          <div class="attempt-label" id="attemptLabel"></div>
+        </div>
+        <div class="canvas-wrap" id="canvasWrap"><canvas id="drawCanvas"></canvas></div>
+        <div class="study-btns">
+          <button class="btn btn-orange btn-lg" onclick="clearCanvas()">🗑 消去</button>
+          <button class="btn btn-primary btn-lg" id="nextBtn" onclick="nextAttempt()"></button>
+        </div>
+      </div>
+      <div id="noStudy" style="display:none">
+        <span style="font-size:56px">📚</span>
+        <div style="font-size:18px;font-weight:700;color:var(--text)">単語がありません</div>
+        <button class="btn btn-primary" onclick="switchTab('list')" style="margin-top:8px">単語を追加</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modalOverlay" onclick="bgClose(event)">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">単語を追加</div>
+    <div class="field"><label>英単語</label><input id="inEng" type="text" placeholder="例: apple" spellcheck="false" autocapitalize="none" autocomplete="off"></div>
+    <div class="field"><label>意味（日本語）</label><input id="inJpn" type="text" placeholder="例: りんご" autocomplete="off"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveWord()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="cmpOverlay">
+  <div class="cmp-card">
+    <span class="cmp-star">⭐</span>
+    <div class="cmp-title">5回書けた！</div>
+    <div class="cmp-word" id="cmpWord"></div>
+    <div class="cmp-btns">
+      <button class="btn btn-outline" onclick="restartWord()">🔄 もう一度</button>
+      <button class="btn btn-primary btn-lg" onclick="nextWord()">次の単語 →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ━━━ TOEIC 1000語 ━━━
+const TOEIC_WORDS = [
+['abandon','放棄する'],['absorb','吸収する'],['accelerate','加速する'],['access','アクセスする'],
+['accommodate','収容する、適応する'],['accomplish','達成する'],['accurate','正確な'],
+['acknowledge','認める、感謝する'],['acquire','取得する、習得する'],['adapt','適応する'],
+['adequate','十分な、適切な'],['address','対処する、演説する'],['adjacent','隣接した'],
+['adjust','調整する'],['administer','管理する'],['administrative','管理の'],
+['advance','前進する、事前の'],['advertise','広告する'],['advise','助言する'],
+['affordable','手ごろな価格の'],['agenda','議題'],['agree','同意する'],
+['agreement','合意、契約'],['allocate','割り当てる'],['allowance','手当、許容量'],
+['alternative','代替の、選択肢'],['amend','修正する'],['analyze','分析する'],
+['announce','発表する'],['annual','年次の、年1回の'],['anticipate','予期する'],
+['apparent','明らかな'],['apply','申し込む、適用する'],['appoint','任命する'],
+['appraise','評価する、査定する'],['approve','承認する'],['approximately','おおよそ'],
+['archive','保管する、アーカイブ'],['arrange','手配する'],['assemble','組み立てる、集める'],
+['assess','評価する、査定する'],['asset','資産'],['assign','割り当てる'],
+['assist','支援する'],['associate','同僚、関連付ける'],['assume','仮定する、引き受ける'],
+['assure','保証する、安心させる'],['attend','出席する'],['attract','引き付ける'],
+['authorize','権限を与える'],['available','利用可能な'],['aware','気づいている'],
+['absence','欠勤、不在'],['accept','受け入れる'],['account','口座、説明する'],
+['accumulate','蓄積する'],['achieve','達成する'],['activate','活性化する'],
+['additional','追加の'],['affiliate','関連会社'],['affect','影響する'],
+['alert','警告する、注意を促す'],['align','整合させる'],['amendment','修正案'],
+['amount','金額、量'],['appreciate','感謝する、鑑賞する'],['approval','承認'],
+['applicable','適用できる'],['aspect','側面'],['attendance','出席'],
+['audit','監査する'],['automate','自動化する'],['award','授与する、賞'],
+['background','経歴、背景'],['baggage','手荷物'],['balance','残高、バランス'],
+['benchmark','基準、ベンチマーク'],['benefit','利益、手当、恩恵'],['board','委員会、乗り込む'],
+['boost','促進する、押し上げる'],['brochure','パンフレット'],['budget','予算'],
+['bulk','大量、大部分'],['bureau','局、事務所'],['branch','支店、支部'],
+['brief','簡潔な、概要を説明する'],['broker','ブローカー、仲介業者'],
+['backup','バックアップ'],['backlog','未処理業務、積み残し'],['billing','請求'],
+['campaign','キャンペーン'],['candidate','候補者'],['capable','能力のある'],
+['capacity','能力、容量、収容力'],['capital','資本、首都'],['cancellation','キャンセル'],
+['carrier','運送業者、通信会社'],['category','カテゴリー、分類'],['certify','証明する'],
+['challenge','課題、挑戦'],['charge','請求する、担当する'],['claim','請求する、主張する'],
+['client','クライアント、顧客'],['collaborate','協力する'],['colleague','同僚'],
+['commit','コミットする、約束する'],['compensate','補償する'],['competitive','競争力のある'],
+['comply','従う、準拠する'],['conduct','実施する、行う'],['confirm','確認する'],
+['consecutive','連続した'],['considerable','かなりの'],['consult','相談する'],
+['consumer','消費者'],['contact','連絡する、接触する'],['contract','契約'],
+['contribute','貢献する'],['convenient','便利な'],['coordinate','調整する'],
+['corporate','企業の'],['correspond','対応する、連絡する'],['coverage','適用範囲'],
+['clarify','明確にする'],['classify','分類する'],['commitment','約束、コミットメント'],
+['commodity','商品、一般商品'],['compensation','報酬、補償'],['complex','複雑な'],
+['compliance','コンプライアンス'],['comprehensive','包括的な'],['concern','懸念、関心'],
+['conclusion','結論'],['conference','会議'],['confidential','機密の'],
+['consolidate','統合する、強固にする'],['construction','建設'],['cooperation','協力'],
+['corporate','企業の'],['cost','費用、コスト'],['courier','宅配便、配達員'],
+['current','現在の'],['currency','通貨'],['customer','顧客'],['criteria','基準（複数）'],
+['deadline','締め切り'],['decline','断る、減少する'],['dedicate','捧げる、専念する'],
+['defer','延期する'],['delegate','委任する、代理人'],['deliver','配達する'],
+['demonstrate','実証する'],['department','部署'],['deposit','預金、頭金'],
+['designate','指定する'],['determine','決定する'],['develop','開発する'],
+['discount','割引'],['diverse','多様な'],['distribute','配布する'],
+['division','部門、事業部'],['document','書類、記録する'],['draft','草案、草稿'],
+['duty','義務、関税'],['deal','取引'],['default','デフォルト、不履行'],
+['demand','需要、要求する'],['describe','説明する'],['detail','詳細'],
+['detect','検出する'],['deteriorate','悪化する'],['discipline','規律'],
+['dispatch','発送する'],['disposal','廃棄'],['downsize','規模を縮小する'],
+['duration','期間'],['efficiency','効率'],['efficient','効率的な'],
+['eligible','資格のある'],['eliminate','排除する'],['employee','従業員'],
+['encourage','励ます'],['ensure','確保する'],['enterprise','企業、事業'],
+['establish','設立する'],['estimate','見積もる'],['evaluate','評価する'],
+['exceed','超える'],['execute','実行する'],['exempt','免除する'],
+['exhibit','展示する'],['expand','拡大する'],['expenditure','支出'],
+['expense','費用'],['expertise','専門知識'],['expire','期限切れになる'],
+['extend','延長する'],['economy','経済'],['effective','効果的な'],
+['effort','努力'],['engage','従事する、関与する'],['enhance','強化する'],
+['essential','不可欠な'],['exchange','交換する'],['explore','探る、調査する'],
+['export','輸出する'],['external','外部の'],['earn','稼ぐ'],
+['economy class','エコノミークラス'],['enforce','強制する'],['enrich','充実させる'],
+['facility','施設'],['factor','要因'],['feasible','実現可能な'],
+['feature','特徴、特集する'],['feedback','フィードバック'],['fiscal','財政の'],
+['flexible','柔軟な'],['forecast','予測する'],['frequent','頻繁な'],
+['frequently','頻繁に'],['fulfill','果たす、満たす'],['fund','資金'],
+['fundamental','基本的な'],['finalize','最終決定する'],['framework','枠組み'],
+['freight','貨物'],['facilitate','促進する、容易にする'],['financial','財政の'],
+['fluctuate','変動する'],['formal','正式な'],['formulate','策定する'],
+['generate','生み出す'],['global','グローバルな'],['gross','総計の'],
+['guarantee','保証する'],['grant','付与する、助成金'],['growth','成長'],
+['guideline','ガイドライン'],['gather','集める'],['gain','得る、利益'],
+['gradually','徐々に'],['handle','取り扱う'],['headquarters','本社'],
+['highlight','強調する'],['hire','採用する'],['host','主催する'],
+['harmonize','調和させる'],['hazard','危険'],['hold','保留する、開催する'],
+['implement','実施する'],['import','輸入する'],['improve','改善する'],
+['incentive','奨励金、インセンティブ'],['indicate','示す'],['industry','産業'],
+['initiative','取り組み、主導権'],['innovate','革新する'],['inspect','検査する'],
+['integrate','統合する'],['international','国際的な'],['inventory','在庫'],
+['invest','投資する'],['invoice','請求書'],['issue','発行する、問題'],
+['income','収入'],['increase','増加する'],['inquire','問い合わせる'],
+['involve','含む、関与させる'],['immediate','即座の'],['impact','影響'],
+['infrastructure','インフラ'],['insurance','保険'],['interest','利息、興味'],
+['interim','暫定的な'],['internal','内部の'],['introduce','紹介する'],
+['impose','課す'],['incorporate','組み込む'],['incur','（費用を）被る'],
+['individual','個人の'],['inform','知らせる'],['interact','交流する'],
+['job','仕事'],['jointly','共同で'],['judgment','判断'],['justify','正当化する'],
+['launch','開始する、発売する'],['lease','賃貸する、リース'],['legal','法的な'],
+['liability','負債、責任'],['locate','配置する、見つける'],['logistics','物流'],
+['loyal','忠実な'],['labor','労働'],['level','レベル、水準'],
+['liquidate','清算する'],['lay off','一時解雇する'],['landmark','画期的な'],
+['layout','レイアウト、配置'],['lead','率いる、リード'],['leverage','活用する'],
+['maintain','維持する'],['manage','管理する'],['mandatory','義務的な'],
+['manufacture','製造する'],['margin','利益幅、余白'],['maximize','最大化する'],
+['merger','合併'],['milestone','マイルストーン'],['minimize','最小化する'],
+['modify','修正する'],['monitor','監視する'],['mutual','相互の'],
+['measure','測定する、対策'],['method','方法'],['material','材料'],
+['media','メディア'],['meeting','会議'],['member','メンバー'],
+['merchandise','商品'],['merge','合併する'],['motivate','動機付ける'],
+['multinational','多国籍の'],['momentum','勢い'],['modernize','近代化する'],
+['negotiate','交渉する'],['network','ネットワーク'],['notify','通知する'],
+['numerous','多数の'],['note','注記する'],['notice','通知、気づく'],
+['necessary','必要な'],['nurture','育成する'],['objective','目標、客観的な'],
+['obtain','取得する'],['operate','操作する'],['opportunity','機会'],
+['optimize','最適化する'],['organize','組織する'],['outcome','結果'],
+['outstanding','優れた、未払いの'],['overhead','諸経費'],['oversee','監督する'],
+['overseas','海外の'],['order','注文する'],['offer','提案する'],
+['output','産出量'],['outsource','外部委託する'],['offset','相殺する'],
+['omit','省略する'],['ongoing','継続中の'],['overall','全体的な'],
+['overtime','残業'],['participate','参加する'],['partnership','パートナーシップ'],
+['payment','支払い'],['pension','年金'],['performance','業績、実績'],
+['permit','許可する'],['personnel','人事、スタッフ'],['potential','潜在的な'],
+['predecessor','前任者'],['premium','プレミアム、保険料'],['prioritize','優先順位をつける'],
+['priority','優先事項'],['procedure','手順'],['productive','生産的な'],
+['profit','利益'],['promote','昇進させる、促進する'],['proposal','提案'],
+['prospect','見込み客、見通し'],['purchase','購入する'],['process','処理する、手順'],
+['produce','生産する'],['project','プロジェクト'],['provide','提供する'],
+['present','提示する、現在の'],['prepare','準備する'],['prevent','防ぐ'],
+['position','職位、立場'],['professional','専門的な'],['proactive','積極的な'],
+['penalty','ペナルティ'],['policy','方針、政策'],['portfolio','ポートフォリオ'],
+['postpone','延期する'],['preliminary','予備的な'],['presentation','プレゼンテーション'],
+['profitable','収益性のある'],['progress','進捗'],['protocol','プロトコル、手順'],
+['provision','規定、供給'],['patent','特許'],['periodically','定期的に'],
+['platform','プラットフォーム'],['practical','実用的な'],['principal','主要な、元本'],
+['qualify','資格を得る'],['quarterly','四半期ごとの'],['quota','割当量'],
+['quality','品質'],['quantity','数量'],['quantify','数値化する'],
+['recruit','採用する'],['reduce','削減する'],['regarding','～に関して'],
+['reimburse','払い戻す'],['reliable','信頼できる'],['relocate','移転する'],
+['require','必要とする'],['resign','辞職する'],['resolve','解決する'],
+['retail','小売り'],['revenue','収益'],['review','審査する、見直す'],
+['revise','改訂する'],['regulation','規制'],['restructure','再構築する'],
+['report','報告する'],['register','登録する'],['research','調査する'],
+['respond','対応する'],['retain','保持する'],['return','返却する、利益'],
+['reconcile','調整する、照合する'],['renew','更新する'],['replace','交換する'],
+['replenish','補充する'],['reschedule','スケジュール変更する'],
+['responsibility','責任'],['restriction','制限'],['reward','報酬、報いる'],
+['schedule','スケジュール'],['secure','確保する、安全な'],['significant','重要な'],
+['streamline','合理化する'],['submit','提出する'],['sufficient','十分な'],
+['suitable','適切な'],['supplier','供給業者'],['surplus','余剰'],
+['survey','調査、アンケート'],['strategy','戦略'],['structure','構造'],
+['subsidiary','子会社'],['succeed','成功する'],['support','支援する'],
+['select','選択する'],['shift','交代、移行する'],['sign','署名する'],
+['standard','標準'],['statement','声明'],['supply','供給する'],
+['settlement','決済、和解'],['staff','スタッフ'],['stakeholder','利害関係者'],
+['stipulate','規定する'],['stock','在庫、株式'],['store','保管する'],
+['strength','強み'],['subcontract','下請けに出す'],['subscription','定期購読'],
+['supervisor','上司'],['sample','サンプル'],['savings','貯蓄'],
+['scope','範囲'],['seek','求める'],['segment','セグメント'],
+['senior','上級の'],['shareholder','株主'],['showcase','展示する'],
+['simplify','簡略化する'],['situation','状況'],['skill','スキル'],
+['solution','解決策'],['specify','指定する'],['sponsor','スポンサーになる'],
+['stabilize','安定させる'],['status','状態'],['strict','厳格な'],
+['summary','要約'],['target','目標にする'],['terminate','終了する、解雇する'],
+['transfer','異動する、転送する'],['transaction','取引'],['tremendous','巨大な'],
+['task','課題、タスク'],['timeline','タイムライン'],['term','条件、期間'],
+['technology','技術'],['track','追跡する'],['train','訓練する'],
+['trend','動向'],['turnover','売上高、離職率'],['temporary','一時的な'],
+['tender','入札する'],['thorough','徹底的な'],['trademark','商標'],
+['transport','輸送する'],['tackle','取り組む'],['talent','才能'],
+['transparency','透明性'],['update','更新する'],['utilize','活用する'],
+['upgrade','アップグレードする'],['urgent','緊急の'],['upcoming','近日中の'],
+['undertake','引き受ける'],['unify','統一する'],['uphold','維持する'],
+['various','様々な'],['vendor','ベンダー、販売業者'],['verify','確認する、検証する'],
+['volunteer','ボランティア'],['volume','量'],['value','価値'],
+['viable','実行可能な'],['vision','ビジョン'],['validate','検証する'],
+['variable','変動する'],['versatile','多才な'],['warehouse','倉庫'],
+['wholesale','卸売り'],['withdraw','撤退する、引き出す'],['workforce','労働力'],
+['workload','業務量'],['workflow','ワークフロー'],['warranty','保証'],
+['accommodation','宿泊施設'],['airport','空港'],['arrival','到着'],
+['amenity','アメニティ、設備'],['booking','予約'],['check-in','チェックイン'],
+['check-out','チェックアウト'],['concierge','コンシェルジュ'],
+['connection','乗り継ぎ、接続'],['customs','税関'],['delay','遅延する'],
+['departure','出発'],['destination','目的地'],['duty-free','免税の'],
+['fare','運賃'],['flight','フライト'],['gate','ゲート'],
+['hotel','ホテル'],['immigration','入国審査'],['itinerary','旅程'],
+['journey','旅'],['layover','乗り継ぎ待ち'],['luggage','荷物'],
+['passenger','乗客'],['passport','パスポート'],['port','港'],
+['rail','鉄道'],['receipt','領収書'],['reservation','予約'],
+['route','ルート'],['shuttle','シャトル'],['terminal','ターミナル'],
+['ticket','チケット'],['tour','ツアー'],['transit','乗り継ぎ'],
+['visa','ビザ'],['account payable','買掛金'],['account receivable','売掛金'],
+['amortize','償却する'],['annuity','年金'],['arrears','滞納'],
+['balance sheet','貸借対照表'],['bond','債券'],['borrow','借りる'],
+['breakeven','損益分岐点'],['cash flow','キャッシュフロー'],['collateral','担保'],
+['commission','手数料'],['cost-effective','費用対効果が高い'],['credit','信用、与信'],
+['debt','負債'],['depreciate','減価償却する'],['dividend','配当金'],
+['equity','株式、資本'],['financial statement','財務諸表'],['fixed cost','固定費'],
+['gross profit','売上総利益'],['income statement','損益計算書'],['interest rate','金利'],
+['investment','投資'],['lease agreement','リース契約'],['liquidity','流動性'],
+['net profit','純利益'],['overhead cost','諸経費'],['payroll','給与計算'],
+['prepayment','前払い'],['rebate','リベート'],['tax','税金'],
+['treasurer','財務担当者'],['variable cost','変動費'],['write-off','損金算入'],
+['applicant','申請者、応募者'],['application','申請書、応募書類'],
+['background check','身辺調査'],['career development','キャリア開発'],
+['dismissal','解雇'],['diversity','多様性'],['downsizing','規模縮小'],
+['employment','雇用'],['evaluation','評価'],['experience','経験'],
+['freelance','フリーランス'],['interview','面接'],['job description','職務内容'],
+['job offer','内定、求人'],['leave','休暇'],['mentoring','メンタリング'],
+['orientation','オリエンテーション'],['performance review','業績評価'],
+['probation','試用期間'],['promotion','昇進'],['recruitment','採用'],
+['reference','推薦状'],['relocation','転勤'],['retire','退職する'],
+['salary','給与'],['severance','退職金'],['training','訓練'],
+['turnover rate','離職率'],['vacancy','欠員、空き'],['work from home','在宅勤務'],
+['brand awareness','ブランド認知度'],['conversion rate','コンバージョン率'],
+['demographics','人口統計'],['distribution channel','流通チャネル'],
+['e-commerce','電子商取引'],['endorsement','推薦、支持'],['exhibition','展示会'],
+['focus group','フォーカスグループ'],['loyalty program','ロイヤルティプログラム'],
+['market research','市場調査'],['niche','ニッチ、特定分野'],['outreach','アウトリーチ'],
+['pitch','売り込み、提案'],['press release','プレスリリース'],['pricing','価格設定'],
+['publicity','宣伝'],['slogan','スローガン'],['target market','ターゲット市場'],
+['testimonial','推薦文'],['annual report','年次報告書'],['attachment','添付ファイル'],
+['board meeting','取締役会'],['briefing','ブリーフィング'],['chairperson','議長'],
+['minutes','議事録'],['notarize','公証する'],['official','公式の'],
+['paperwork','書類仕事'],['proofread','校正する'],['proxy','代理人'],
+['recipient','受取人'],['signature','署名'],['subject line','件名'],
+['teleconference','電話会議'],['template','テンプレート'],['videoconference','ビデオ会議'],
+['automation','自動化'],['defect','欠陥'],['equipment','設備、機器'],
+['factory','工場'],['inspection','検査'],['install','設置する'],
+['maintenance','保守'],['production line','生産ライン'],['prototype','プロトタイプ'],
+['quality control','品質管理'],['raw material','原材料'],['recall','回収する'],
+['reject','拒否する'],['repair','修理する'],['safety','安全'],
+['specification','仕様'],['tolerance','許容差、許容範囲'],['yield','収益、収率'],
+['concise','簡潔な'],['convene','招集する'],['crucial','重要な'],
+['disclose','開示する'],['discrepancy','不一致'],['dispose','廃棄する'],
+['effectively','効果的に'],['endeavor','努力する'],['excess','過剰'],
+['expedite','速める、促進する'],['facilitate','促進する'],['findings','調査結果'],
+['fluctuation','変動'],['forthcoming','近日中の、協力的な'],
+['immediately','すぐに'],['inclusive','包括的な'],['mandatory meeting','義務参加会議'],
+['proactive approach','積極的なアプローチ'],['remote work','リモートワーク'],
+['streamlined process','合理化されたプロセス'],
+];
+
+// ━━━ State ━━━
+let words = JSON.parse(localStorage.getItem('vocabWords') || '[]');
+let fcResults = JSON.parse(localStorage.getItem('fcResults') || '{}');
+let editId = null;
+let study = { order:[], idx:0, attempt:1, shuffled:false, showMeaning:false };
+let fc = { refs:[], order:[], idx:0, flipped:false, filter:'all' };
+
+// ━━━ Boot ━━━
+(function init() {
+  if (!localStorage.getItem('toeicLoaded')) {
+    const existing = new Set(words.map(w => w.eng.toLowerCase()));
+    TOEIC_WORDS.forEach(([eng, jpn]) => {
+      if (!existing.has(eng.toLowerCase()))
+        words.push({ id: Date.now() + Math.random(), eng, jpn });
+    });
+    localStorage.setItem('toeicLoaded', '1');
+    save();
+  }
+  renderList();
+  setupCanvas();
+})();
+
+function save() { localStorage.setItem('vocabWords', JSON.stringify(words)); }
+function saveFC() { localStorage.setItem('fcResults', JSON.stringify(fcResults)); }
+
+// ━━━ TOEIC一括追加ボタン ━━━
+function addToeic() {
+  const existing = new Set(words.map(w => w.eng.toLowerCase()));
+  let n = 0;
+  TOEIC_WORDS.forEach(([eng, jpn]) => {
+    if (!existing.has(eng.toLowerCase())) { words.push({ id: Date.now()+Math.random(), eng, jpn }); n++; }
+  });
+  if (n > 0) { save(); renderList(); alert(n + '語を追加しました'); }
+  else alert('全てのTOEIC単語が既に登録されています');
+}
+
+// ━━━ Tabs ━━━
+function switchTab(tab) {
+  ['list','card','study'].forEach(t => {
+    const btn = document.getElementById('tab' + t[0].toUpperCase() + t.slice(1));
+    if (btn) btn.classList.toggle('active', t === tab);
+    document.getElementById(t + 'Tab').classList.toggle('active', t === tab);
+  });
+  if (tab === 'study') { initStudy(); setTimeout(resizeCanvas, 30); }
+  if (tab === 'card')  initFC();
+}
+
+// ━━━ Word List ━━━
+function renderList() {
+  const q  = document.getElementById('searchInput').value.toLowerCase();
+  const fl = words.filter(w => w.eng.toLowerCase().includes(q) || w.jpn.toLowerCase().includes(q));
+  const el = document.getElementById('wordList');
+  if (words.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📖</div><div class="empty-title">単語リストが空です</div><div>「＋ 追加」または「TOEIC追加」から登録できます</div></div>`;
+    return;
+  }
+  if (fl.length === 0) {
+    el.innerHTML = `<div class="word-count">${words.length}語登録済み</div><div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">見つかりません</div></div>`;
+    return;
+  }
+  el.innerHTML = `<div class="word-count">${fl.length} / ${words.length}語</div>` +
+    fl.map(w => `<div class="word-card"><div style="flex:1"><div class="word-english">${esc(w.eng)}</div><div class="word-japanese">${esc(w.jpn)}</div></div><div class="word-actions"><button class="icon-btn" onclick="openModal(${w.id})">✏️</button><button class="icon-btn del" onclick="deleteWord(${w.id})">🗑️</button></div></div>`).join('');
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function deleteWord(id) {
+  if (!confirm('この単語を削除しますか？')) return;
+  words = words.filter(w => w.id !== id); save(); renderList();
+}
+
+// ━━━ Modal ━━━
+function openModal(id = null) {
+  editId = id;
+  const w = id ? words.find(w => w.id === id) : null;
+  document.getElementById('modalTitle').textContent = id ? '単語を編集' : '単語を追加';
+  document.getElementById('inEng').value = w ? w.eng : '';
+  document.getElementById('inJpn').value = w ? w.jpn : '';
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('inEng').focus(), 80);
+}
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); editId = null; }
+function bgClose(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+function saveWord() {
+  const eng = document.getElementById('inEng').value.trim();
+  const jpn = document.getElementById('inJpn').value.trim();
+  if (!eng) { document.getElementById('inEng').focus(); return; }
+  if (editId) { const w = words.find(w => w.id === editId); if (w) { w.eng = eng; w.jpn = jpn; } }
+  else words.push({ id: Date.now(), eng, jpn });
+  save(); renderList(); closeModal();
+}
+document.getElementById('inEng').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('inJpn').focus(); });
+document.getElementById('inJpn').addEventListener('keydown', e => { if (e.key==='Enter') saveWord(); });
+
+// ━━━ Flashcard ━━━
+function initFC() {
+  const all = document.getElementById('fcNoWords');
+  const empty = document.getElementById('fcEmpty');
+  const inner = document.getElementById('cardInner2');
+  if (words.length === 0) {
+    inner.style.display = 'none'; all.style.display = 'flex'; empty.style.display = 'none'; return;
+  }
+  const base = fc.filter === 'unknown' ? words.filter(w => fcResults[w.eng] !== 'known') : [...words];
+  if (base.length === 0) {
+    inner.style.display = 'none'; all.style.display = 'none'; empty.style.display = 'flex'; return;
+  }
+  inner.style.display = 'flex'; all.style.display = 'none'; empty.style.display = 'none';
+  fc.refs = base;
+  fc.order = base.map((_,i) => i);
+  fc.idx = 0; fc.flipped = false;
+  renderCard();
+}
+
+function renderCard() {
+  const w = fc.refs[fc.order[fc.idx]];
+  document.getElementById('cardEng').textContent  = w.eng;
+  document.getElementById('cardEngB').textContent = w.eng;
+  document.getElementById('cardJpn').textContent  = w.jpn;
+  document.getElementById('fcCounter').textContent = `${fc.idx + 1} / ${fc.order.length}`;
+  const r = fcResults[w.eng];
+  document.getElementById('cardBadge').textContent = r === 'known' ? '✓' : r === 'unknown' ? '✗' : '';
+  document.getElementById('cardFlip').classList.remove('flipped');
+  document.getElementById('markBtns').style.display = 'none';
+  fc.flipped = false;
+  updateFCStats();
+}
+
+function updateFCStats() {
+  const known   = words.filter(w => fcResults[w.eng] === 'known').length;
+  const unknown = words.filter(w => fcResults[w.eng] === 'unknown').length;
+  const unmarked = words.length - known - unknown;
+  document.getElementById('fcStats').textContent = `✓ ${known}  ✗ ${unknown}  未 ${unmarked}`;
+}
+
+function flipCard() {
+  if (fc.flipped) return;
+  fc.flipped = true;
+  document.getElementById('cardFlip').classList.add('flipped');
+  document.getElementById('markBtns').style.display = 'flex';
+}
+
+function markCard(result) {
+  const w = fc.refs[fc.order[fc.idx]];
+  fcResults[w.eng] = result;
+  saveFC();
+  nextCard();
+}
+
+function nextCard() {
+  fc.idx = (fc.idx + 1) % fc.order.length;
+  renderCard();
+}
+function prevCard() {
+  fc.idx = (fc.idx - 1 + fc.order.length) % fc.order.length;
+  renderCard();
+}
+function shuffleFC() {
+  fc.order.sort(() => Math.random() - .5);
+  fc.idx = 0; renderCard();
+}
+function resetFC() {
+  if (!confirm('学習記録をリセットしますか？')) return;
+  fcResults = {}; saveFC(); initFC();
+}
+function setFilt(f) {
+  fc.filter = f;
+  document.getElementById('filtAll').classList.toggle('on', f === 'all');
+  document.getElementById('filtUnknown').classList.toggle('on', f === 'unknown');
+  initFC();
+}
+
+// Keyboard shortcuts for flashcard
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('cardTab').classList.contains('active')) return;
+  if (document.getElementById('modalOverlay').classList.contains('open')) return;
+  if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flipCard(); }
+  else if (e.key === 'ArrowRight' || e.key === 'l') nextCard();
+  else if (e.key === 'ArrowLeft'  || e.key === 'h') prevCard();
+  else if (e.key === 'k' || e.key === 'K') { if (fc.flipped) markCard('known'); }
+  else if (e.key === 'x' || e.key === 'X') { if (fc.flipped) markCard('unknown'); }
+});
+
+// ━━━ Study ━━━
+function initStudy() {
+  const has = words.length > 0;
+  document.getElementById('studyInner').style.display = has ? 'flex' : 'none';
+  document.getElementById('noStudy').style.display    = has ? 'none' : 'flex';
+  if (!has) return;
+  if (study.order.length !== words.length) resetOrder();
+  renderStudy();
+}
+function resetOrder() {
+  study.order = words.map((_,i) => i);
+  if (study.shuffled) study.order.sort(() => Math.random() - .5);
+  study.idx = 0; study.attempt = 1; study.showMeaning = false;
+}
+function curWord() { return words[study.order[study.idx % study.order.length]]; }
+function renderStudy() {
+  const w = curWord(); if (!w) return;
+  study.showMeaning = false;
+  document.getElementById('wordDisplay').textContent = w.eng;
+  updateMeaningBtn(w); renderDots(); updateNextBtn();
+}
+function updateMeaningBtn(w) {
+  const shown = study.showMeaning;
+  document.getElementById('meaningText').textContent = shown ? (w && w.jpn ? w.jpn : '—') : '意味を見る';
+  document.getElementById('meaningBtn').classList.toggle('shown', shown);
+}
+function toggleMeaning() { study.showMeaning = !study.showMeaning; updateMeaningBtn(curWord()); }
+function renderDots() {
+  document.getElementById('dots').innerHTML = Array.from({length:5},(_,i) => {
+    const n=i+1; const c = n<study.attempt?'done':n===study.attempt?'current':'';
+    return `<div class="dot ${c}"></div>`;
+  }).join('');
+  document.getElementById('attemptLabel').textContent = `${study.attempt} / 5 回目`;
+}
+function updateNextBtn() {
+  const btn = document.getElementById('nextBtn');
+  btn.textContent = study.attempt < 5 ? `次へ (${study.attempt}/5) →` : '完了 ✓';
+  btn.className   = 'btn btn-lg ' + (study.attempt < 5 ? 'btn-primary' : 'btn-success');
+}
+function nextAttempt() {
+  if (study.attempt < 5) { study.attempt++; clearCanvas(); renderDots(); updateNextBtn(); }
+  else showCompletion();
+}
+function showCompletion() {
+  const w = curWord();
+  document.getElementById('cmpWord').textContent = w.eng + (w.jpn ? ' — ' + w.jpn : '');
+  document.getElementById('cmpOverlay').classList.add('open');
+}
+function restartWord() {
+  document.getElementById('cmpOverlay').classList.remove('open');
+  study.attempt = 1; study.showMeaning = false; clearCanvas(); renderStudy();
+}
+function nextWord() {
+  document.getElementById('cmpOverlay').classList.remove('open');
+  study.idx = (study.idx + 1) % words.length;
+  study.attempt = 1; study.showMeaning = false; clearCanvas(); renderStudy();
+}
+function toggleShuffle() {
+  study.shuffled = !study.shuffled;
+  document.getElementById('shuffleBtn').classList.toggle('on', study.shuffled);
+  document.getElementById('shuffleLabel').textContent = study.shuffled ? 'シャッフルON' : 'シャッフルOFF';
+  resetOrder();
+  if (document.getElementById('studyTab').classList.contains('active')) { renderStudy(); clearCanvas(); }
+}
+
+// ━━━ Canvas ━━━
+let canvas, ctx, drawing = false, last = null, dpr = 1;
+function setupCanvas() {
+  canvas = document.getElementById('drawCanvas');
+  const wrap = document.getElementById('canvasWrap');
+
+  // iOSではCSSだけでは不十分なのでJSでも設定
+  canvas.style.touchAction = 'none';
+  wrap.style.touchAction   = 'none';
+
+  resizeCanvas();
+
+  // Pointer Events（デスクトップ・Apple Pencil対応）
+  canvas.addEventListener('pointerdown',   onDown);
+  canvas.addEventListener('pointermove',   onMove);
+  canvas.addEventListener('pointerup',     onUp);
+  canvas.addEventListener('pointercancel', onUp);
+
+  // iOS Safariでスクロールを止める（passive:falseが必須）
+  canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+  canvas.addEventListener('touchmove',  e => e.preventDefault(), { passive: false });
+
+  // キャンバスサイズをレイアウト変化に追従させる
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(() => { if (ctx) resizeCanvas(); }).observe(wrap);
+  }
+}
+function resizeCanvas() {
+  if (!canvas) return;
+  const wrap = document.getElementById('canvasWrap');
+  const r = wrap.getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  dpr = window.devicePixelRatio || 1;
+  canvas.width = r.width * dpr; canvas.height = r.height * dpr;
+  canvas.style.width = r.width + 'px'; canvas.style.height = r.height + 'px';
+  ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#1a1a2e';
+}
+function pt(e) {
+  const r = canvas.getBoundingClientRect();
+  const p = e.pointerType === 'mouse' ? 0.5 : (e.pressure > 0 ? e.pressure : 0.5);
+  return { x: e.clientX - r.left, y: e.clientY - r.top, p };
+}
+function onDown(e) {
+  e.preventDefault();
+  try { canvas.setPointerCapture(e.pointerId); } catch(_) {} // iOSで失敗してもOK
+  drawing = true; last = pt(e);
+  ctx.beginPath(); ctx.arc(last.x, last.y, last.p * 2.5, 0, Math.PI*2);
+  ctx.fillStyle = '#1a1a2e'; ctx.fill();
+}
+function onMove(e) {
+  if (!drawing) return; e.preventDefault();
+  const p = pt(e); ctx.lineWidth = p.p * 5 + 1.5;
+  ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p;
+}
+function onUp() { drawing = false; last = null; }
+function clearCanvas() { if (!ctx) return; ctx.clearRect(0, 0, canvas.width/dpr, canvas.height/dpr); }
+window.addEventListener('resize', () => {
+  if (document.getElementById('studyTab').classList.contains('active')) resizeCanvas();
+});
+</script>
+</body>
+</html>
