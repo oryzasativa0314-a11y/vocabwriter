@@ -208,9 +208,13 @@
           <div class="attempt-label" id="attemptLabel"></div>
         </div>
         <div class="canvas-wrap" id="canvasWrap"><svg id="drawSvg" xmlns="http://www.w3.org/2000/svg"></svg></div>
+        <div id="dbgBar" style="text-align:center;font-size:12px;color:#888;padding:2px 0;flex-shrink:0;">待機中</div>
         <div class="study-btns">
           <button class="btn btn-orange btn-lg" onclick="clearCanvas()">🗑 消去</button>
           <button class="btn btn-primary btn-lg" id="nextBtn" onclick="nextAttempt()"></button>
+        </div>
+        <div style="text-align:center;padding:4px 0 8px;flex-shrink:0;">
+          <button onclick="runDiag()" style="background:#ef4444;color:white;border:none;border-radius:8px;padding:8px 20px;font-size:14px;font-weight:700;">🔴 診断ボタン（タップ）</button>
         </div>
       </div>
       <div id="noStudy" style="display:none">
@@ -745,17 +749,21 @@ function setupCanvas() {
   drawSvg.style.touchAction = 'none';
   wrap.style.touchAction = 'none';
 
+  function dbg(msg) { var el = document.getElementById('dbgBar'); if (el) el.textContent = msg; }
+
   drawSvg.addEventListener('touchstart', function(e) {
     e.preventDefault();
     _touchActive = true;
-    const t = e.changedTouches[0];
+    var t = e.changedTouches[0];
+    if (!t) return;
+    dbg('touchstart x=' + Math.round(t.clientX) + ' y=' + Math.round(t.clientY));
     startStroke(t.clientX, t.clientY);
   }, { passive: false });
 
   drawSvg.addEventListener('touchmove', function(e) {
     e.preventDefault();
-    if (!currentPath) return;
-    const t = e.changedTouches[0];
+    var t = e.changedTouches[0];
+    if (!t || !currentPath) return;
     extendStroke(t.clientX, t.clientY);
   }, { passive: false });
 
@@ -763,17 +771,38 @@ function setupCanvas() {
   drawSvg.addEventListener('touchcancel', function() { endStroke(); setTimeout(function() { _touchActive = false; }, 50); });
 
   drawSvg.addEventListener('pointerdown', function(e) {
-    if (_touchActive || e.pointerType === 'touch') return;
+    if (e.pointerType === 'touch') return;
     e.preventDefault();
+    dbg('pointer type=' + e.pointerType + ' x=' + Math.round(e.clientX));
     startStroke(e.clientX, e.clientY);
   });
   drawSvg.addEventListener('pointermove', function(e) {
-    if (_touchActive || e.pointerType === 'touch' || !currentPath) return;
+    if (e.pointerType === 'touch' || !currentPath) return;
     e.preventDefault();
     extendStroke(e.clientX, e.clientY);
   });
-  drawSvg.addEventListener('pointerup',     function(e) { if (!_touchActive && e.pointerType !== 'touch') endStroke(); });
-  drawSvg.addEventListener('pointercancel', function(e) { if (!_touchActive && e.pointerType !== 'touch') endStroke(); });
+  drawSvg.addEventListener('pointerup',     function(e) { if (e.pointerType !== 'touch') endStroke(); });
+  drawSvg.addEventListener('pointercancel', function(e) { if (e.pointerType !== 'touch') endStroke(); });
+}
+
+function runDiag() {
+  var svg = document.getElementById('drawSvg');
+  var wrap = document.getElementById('canvasWrap');
+  var sr = svg ? svg.getBoundingClientRect() : null;
+  var wr = wrap ? wrap.getBoundingClientRect() : null;
+  var msg = 'SVG: ' + (sr ? Math.round(sr.width) + 'x' + Math.round(sr.height) : 'not found') +
+            '\nWrap: ' + (wr ? Math.round(wr.width) + 'x' + Math.round(wr.height) : 'not found');
+  // Draw a red test line directly in SVG coordinates
+  if (svg) {
+    var line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    line.setAttribute('stroke', 'red');
+    line.setAttribute('stroke-width', '6');
+    line.setAttribute('fill', 'none');
+    line.setAttribute('d', 'M 20 20 L 120 80 L 220 20');
+    svg.appendChild(line);
+    msg += '\n赤い線が見えますか？';
+  }
+  alert(msg);
 }
 
 function startStroke(clientX, clientY) {
