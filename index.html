@@ -125,7 +125,7 @@
 <div id="app">
   <header>
     <div class="header-top">
-      <span class="app-title">✏️ 英単語ライター</span>
+      <span class="app-title">✏️ 英単語ライター <span style="font-size:10px;opacity:0.4;font-weight:400">v10</span></span>
       <button class="shuffle-btn" id="shuffleBtn" onclick="toggleShuffle()">🔀 <span id="shuffleLabel">シャッフルOFF</span></button>
     </div>
     <div class="tabs">
@@ -838,6 +838,14 @@ function clearCanvas() {
 
 function resizeCanvas() {}
 window.addEventListener('resize', function() {});
+
+// ドキュメントレベルでタッチを監視（デバッグ用）
+document.addEventListener('touchstart', function(e) {
+  if (!document.getElementById('studyTab').classList.contains('active')) return;
+  var t = e.changedTouches[0];
+  var dbg = document.getElementById('dbgBar');
+  if (dbg && t) dbg.textContent = 'DOC touch: ' + Math.round(t.clientX) + ',' + Math.round(t.clientY) + ' target=' + e.target.tagName + '#' + e.target.id;
+}, { passive: true });
 </script>
 </body>
 </html>
