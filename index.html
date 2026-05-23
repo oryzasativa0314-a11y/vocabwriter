@@ -120,6 +120,18 @@
     .cmp-btns  { display:flex; gap:12px; justify-content:center; }
     ::-webkit-scrollbar { width:5px; }
     ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+    /* ── Pronunciation button ── */
+    .speak-btn { width:38px; height:38px; border:none; background:rgba(59,130,246,.1); border-radius:50%; font-size:18px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:all .15s; color:var(--primary); flex-shrink:0; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+    .speak-btn:active { background:rgba(59,130,246,.28); transform:scale(.88); }
+
+    /* ── Study: word + speaker row ── */
+    .word-header-row { display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:8px; }
+    .word-header-row .word-display { margin-bottom:0; }
+
+    /* ── Meaning reveal box ── */
+    .meaning-reveal { font-size:clamp(18px,4.5vw,28px); font-weight:800; color:#1d4ed8; background:linear-gradient(135deg,#eff6ff,#dbeafe); border:1.5px solid #93c5fd; border-radius:12px; padding:10px 24px; margin:0 auto 10px; max-width:92%; text-align:center; animation:mReveal .22s ease; }
+    @keyframes mReveal { from{opacity:0;transform:scale(.94) translateY(-5px)} to{opacity:1;transform:none} }
   </style>
 </head>
 <body>
@@ -165,7 +177,8 @@
             <div class="card-face">
               <div class="card-badge" id="cardBadge"></div>
               <div class="card-eng"  id="cardEng"></div>
-              <div class="card-hint-txt">クリックして意味を確認</div>
+              <div class="card-hint-txt">タップして意味を確認</div>
+              <button class="speak-btn" style="position:absolute;bottom:16px;right:16px" onclick="event.stopPropagation();speakFC()" title="発音を聞く">🔊</button>
             </div>
             <div class="card-face card-back-face">
               <div class="card-eng-sm" id="cardEngB"></div>
@@ -201,7 +214,11 @@
     <div class="tab-panel" id="studyTab">
       <div id="studyInner">
         <div class="study-header">
-          <div class="word-display" id="wordDisplay"></div>
+          <div class="word-header-row">
+            <div class="word-display" id="wordDisplay"></div>
+            <button class="speak-btn" onclick="speakCurrent()" title="発音を聞く">🔊</button>
+          </div>
+          <div class="meaning-reveal" id="meaningReveal" style="display:none"></div>
           <button class="meaning-btn" id="meaningBtn" onclick="toggleMeaning()">👁 <span id="meaningText">意味を見る</span></button>
         </div>
         <div class="progress-area">
@@ -488,6 +505,190 @@ const TOEIC_WORDS = [
 ['immediately','すぐに'],['inclusive','包括的な'],['mandatory meeting','義務参加会議'],
 ['proactive approach','積極的なアプローチ'],['remote work','リモートワーク'],
 ['streamlined process','合理化されたプロセス'],
+// ── テクノロジー ──
+['algorithm','アルゴリズム・処理手順・問題解決の手順'],
+['authentication','認証・本人確認・ログイン検証'],
+['bandwidth','帯域幅・通信速度・処理能力'],
+['bug','バグ・プログラムの欠陥・不具合'],
+['cloud','クラウド・インターネット経由のサービス基盤'],
+['cybersecurity','サイバーセキュリティ・情報セキュリティ・不正アクセス対策'],
+['dashboard','ダッシュボード・管理画面・一覧表示'],
+['database','データベース・情報の集積・データ管理システム'],
+['deploy','展開する・導入する・デプロイする'],
+['encryption','暗号化・データ保護・情報セキュリティ手段'],
+['firewall','ファイアウォール・不正アクセス防止・セキュリティ壁'],
+['interface','インターフェース・操作画面・システム間の接続部'],
+['scalability','スケーラビリティ・拡張性・成長への対応力'],
+['server','サーバー・情報処理コンピュータ・サービス提供機'],
+['software','ソフトウェア・アプリ・プログラム'],
+['synchronize','同期する・一致させる・データを揃える'],
+['troubleshoot','トラブルを解決する・原因を特定する'],
+['upload','アップロードする・データを送信する'],
+['user interface','ユーザーインターフェース・UI・操作画面'],
+['virtual','仮想の・オンラインの・実体のない'],
+['wireless','無線の・ワイヤレス・コードレス'],
+['mobile app','モバイルアプリ・スマートフォン向けアプリ'],
+['data analytics','データ分析・データアナリティクス・統計解析'],
+['cloud storage','クラウドストレージ・オンライン保存・リモートデータ管理'],
+['digital transformation','デジタル変革・DX・IT活用による事業変革'],
+// ── ビジネス戦略 ──
+['agile','アジャイル・俊敏な・臨機応変な・段階的改善手法'],
+['bottleneck','ボトルネック・障害・制約箇所・流れを止める要因'],
+['competitive advantage','競争優位性・差別化の強み'],
+['core competency','中核的能力・コアコンピタンス・他社に真似できない強み'],
+['due diligence','デューデリジェンス・詳細調査・精査・リスク確認'],
+['economies of scale','規模の経済・スケールメリット・大量生産による低コスト化'],
+['go-to-market strategy','市場参入戦略・販売戦略・製品を市場に届ける計画'],
+['insight','洞察・見識・深い理解・本質をつかむ力'],
+['KPI','重要業績評価指標・成果を測る数値目標'],
+['lean','無駄のない・効率化された・リーン手法'],
+['mission statement','ミッションステートメント・使命宣言'],
+['pilot project','パイロットプロジェクト・試験的な取り組み・小規模検証'],
+['proof of concept','概念実証・PoC・アイデアの有効性確認'],
+['roadmap','ロードマップ・計画の道筋・行程表'],
+['ROI','投資収益率・費用対効果・Return on Investment'],
+['scalable','スケーラブルな・拡張可能な・成長対応できる'],
+['scenario planning','シナリオプランニング・複数の将来シナリオを検討する手法'],
+['SWOT analysis','SWOT分析・強み・弱み・機会・脅威の整理'],
+['synergy','相乗効果・シナジー・協力による価値の向上'],
+['turnaround','業績回復・短期での完了・方向転換・V字回復'],
+['unique selling point','独自の強み・USP・差別化ポイント'],
+['value proposition','価値提案・顧客への提供価値・存在意義'],
+['vision statement','ビジョンステートメント・将来の目指す姿の宣言'],
+// ── プロジェクト管理 ──
+['action item','アクションアイテム・具体的なやるべきこと・タスク'],
+['cross-functional team','部門横断チーム・異なる部署が連携するチーム'],
+['feedback loop','フィードバックループ・改善サイクル・繰り返し検証'],
+['handover','引き継ぎ・業務移管・担当交代'],
+['kickoff meeting','キックオフミーティング・プロジェクト開始会議'],
+['post-mortem','事後検討会・振り返り・原因分析・レトロスペクティブ'],
+['resource allocation','リソース配分・人材や予算の割り当て'],
+['retrospective','振り返り・事後評価・過去を見直す'],
+['risk mitigation','リスク軽減・リスク対策・損失を最小化する'],
+['scope creep','スコープクリープ・仕様の膨張・要件の意図せぬ拡大'],
+['sprint','スプリント・短期作業期間・全力で取り組む期間'],
+['task force','タスクフォース・特別チーム・専門委員会'],
+['work breakdown structure','作業分解構成図・WBS・タスクを細分化した一覧'],
+['contingency plan','コンティンジェンシープラン・緊急時対応計画・予備策'],
+// ── 人事・HR ──
+['career development','キャリア開発・職能開発・成長計画'],
+['coaching','コーチング・能力を引き出す指導・対話型育成'],
+['competency','コンピテンシー・職務遂行能力・行動特性'],
+['diversity and inclusion','ダイバーシティ＆インクルージョン・多様性と包摂'],
+['employee engagement','従業員エンゲージメント・仕事への熱意と関与度'],
+['exit interview','退職面談・離職者ヒアリング'],
+['headcount','人員数・従業員数・採用枠'],
+['job rotation','ジョブローテーション・定期的な部署異動'],
+['on-boarding','オンボーディング・新人研修・入社時の導入プロセス'],
+['performance appraisal','人事評価・業績査定・考課'],
+['probationary period','試用期間・能力を見極める期間'],
+['succession planning','後継者育成計画・幹部候補の育成'],
+['talent acquisition','人材獲得・採用活動・優秀な人材の確保'],
+['talent management','人材管理・タレントマネジメント・能力の最大化'],
+['work-life balance','ワークライフバランス・仕事と生活の調和'],
+['telecommute','テレワークする・在宅勤務する・リモートで働く'],
+['annual leave','年次有給休暇・アニュアルリーブ'],
+// ── 財務・経理 ──
+['accounts payable','買掛金・支払い義務・仕入れ債務'],
+['accounts receivable','売掛金・受け取り権利・未収金'],
+['amortization','償却・ローンの元本返済・無形資産の費用化'],
+['break-even point','損益分岐点・コストと収益が一致する点'],
+['capital expenditure','設備投資・資本的支出・CAPEX'],
+['cost reduction','コスト削減・費用低減・経費圧縮'],
+['credit line','与信枠・借入限度額・信用枠'],
+['fiscal year','会計年度・事業年度・決算期'],
+['gross margin','粗利益率・売上総利益率'],
+['hedge','ヘッジする・リスクを回避する・損失を抑える備え'],
+['income tax','所得税・法人税'],
+['net profit','純利益・税引き後利益・最終利益'],
+['operating profit','営業利益・本業の利益・事業活動から生まれる収益'],
+['profit margin','利益率・収益性・マージン'],
+['revenue stream','収益源・売上の流れ・稼ぎ方の仕組み'],
+['variable cost','変動費・生産量に応じて変わる費用'],
+['working capital','運転資本・日々の事業運営に必要な資金'],
+['write-off','損金算入・不良資産の処理・帳消し'],
+['return on investment','投資収益率・ROI・投資対効果'],
+// ── マーケティング ──
+['brand equity','ブランド資産・ブランドの価値と信頼・ブランド力'],
+['call to action','行動喚起・CTA・次のステップへの誘導'],
+['content marketing','コンテンツマーケティング・有益な情報提供で顧客を引き付ける手法'],
+['customer acquisition cost','顧客獲得コスト・CAC・一人の顧客を得るための費用'],
+['customer journey','カスタマージャーニー・顧客が購買に至るまでの体験の流れ'],
+['engagement rate','エンゲージメント率・ユーザー反応率・交流の度合い'],
+['growth hacking','グロースハッキング・低コストで急成長する戦略'],
+['influencer','インフルエンサー・影響力のある発信者・意見をリードする人'],
+['lead generation','リード獲得・見込み客の開拓・潜在顧客へのアプローチ'],
+['market penetration','市場浸透・既存市場でのシェア拡大'],
+['market segmentation','市場細分化・ターゲット層の区分け'],
+['net promoter score','NPS・顧客推薦度・「友人に勧めるか？」の指標'],
+['organic growth','オーガニック成長・広告に頼らない自然な事業拡大'],
+['persona','ペルソナ・想定顧客像・ターゲット人物像'],
+['SEO','検索エンジン最適化・Googleで上位表示させる取り組み'],
+['viral marketing','バイラルマーケティング・口コミによる急拡散手法'],
+['value-added service','付加価値サービス・基本サービス以上の価値提供'],
+// ── 法務・コンプライアンス ──
+['arbitration','仲裁・第三者による紛争解決・裁判外の紛争処理'],
+['breach of contract','契約違反・債務不履行・約束を破ること'],
+['clause','条項・契約書の一節・特定の規定'],
+['confidentiality agreement','守秘義務契約・秘密保持契約'],
+['disclaimer','免責事項・責任回避の表明・注意書き'],
+['enforceable','強制執行可能な・法的効力のある'],
+['indemnify','補償する・免責にする・損害を保証する'],
+['intellectual property','知的財産・特許・著作権・商標などの無形資産'],
+['jurisdiction','管轄権・法律の適用範囲・裁判管轄'],
+['litigation','訴訟・法廷での争い・裁判手続き'],
+['nondisclosure agreement','守秘義務契約・NDA・機密保持契約'],
+['regulatory compliance','法令遵守・規制への準拠・コンプライアンス'],
+['statute','成文法・法令・条例・議会が制定した法律'],
+['terms and conditions','利用規約・契約条件・取引条件'],
+['waiver','権利放棄・免除・免責'],
+['whistleblower','内部告発者・不正を報告する人'],
+// ── コミュニケーション ──
+['assertive','自己主張できる・積極的に意見を言う・はっきり伝える'],
+['brainstorm','ブレインストーミングする・自由にアイデアを出し合う'],
+['concise','簡潔な・要点を絞った・無駄のない・端的な'],
+['constructive criticism','建設的な批判・改善につながる指摘'],
+['empathy','共感・相手の立場に立つこと・感情移入'],
+['facilitate','促進する・会議を進行する・円滑にする・司会する'],
+['follow up','フォローアップする・後追い確認する・継続対応する'],
+['interpersonal skills','対人スキル・コミュニケーション能力・人間関係力'],
+['mediate','仲介する・調停する・間に入って合意を促す'],
+['persuade','説得する・納得させる・相手の行動を変える'],
+['rapport','信頼関係・ラポール・打ち解けた関係・心理的つながり'],
+// ── カスタマーサービス ──
+['complaint handling','苦情対応・クレーム処理・顧客の不満への対処'],
+['escalation','エスカレーション・上位への報告・問題を上げること'],
+['exceed expectations','期待を超える・想定以上の結果を出す'],
+['hospitality','おもてなし・接客の心・温かいサービス精神'],
+['refund policy','返金方針・払い戻しルール'],
+['service recovery','サービス回復・クレーム後の信頼再構築'],
+['customer retention','顧客維持・既存顧客の引き留め・離反防止'],
+// ── 汎用ビジネス表現 ──
+['best practice','ベストプラクティス・最善の方法・業界標準の手法'],
+['big picture','大局的な視点・全体像・森を見る目'],
+['bottom line','最終利益・結論・核心・要は'],
+['change management','変革管理・組織変革の推進・変化への適応支援'],
+['conflict of interest','利益相反・利害の衝突'],
+['corporate culture','企業文化・社風・組織の価値観や行動様式'],
+['corporate governance','コーポレートガバナンス・企業統治・経営の透明性'],
+['cost overrun','コスト超過・予算オーバー・想定外の費用増加'],
+['go live','本番稼働する・サービスを開始する・リリースする'],
+['in-house','社内の・自社で行う・外注しない'],
+['key account','主要顧客・大口取引先・重要顧客'],
+['knowledge base','ナレッジベース・知識の集積・FAQやノウハウのデータベース'],
+['knowledge transfer','知識移転・技術継承・ノウハウの引き継ぎ'],
+['lessons learned','教訓・振り返り・経験から学んだこと'],
+['on track','順調に進んでいる・計画通り・軌道通り'],
+['pain point','課題・ペインポイント・顧客の不満点・困りごと'],
+['quick win','素早い成果・即効果のある施策・早期に見せられる成果'],
+['red tape','官僚的な手続き・過剰な事務処理・繁文縟礼'],
+['sign off','承認する・サインオフする・最終確認する'],
+['think outside the box','固定観念にとらわれず考える・型破りな発想'],
+['win-win','ウィンウィン・双方に利益がある・相互に有益な'],
+['big data','ビッグデータ・膨大な情報の集積と分析'],
+['paradigm shift','パラダイムシフト・常識の大転換・ものの見方の根本的変化'],
+['key takeaway','重要なポイント・持ち帰るべき学び・要点'],
+['low-hanging fruit','すぐ手に入る成果・容易に達成できる目標'],
 ];
 
 // ━━━ State ━━━
@@ -499,13 +700,13 @@ let fc = { refs:[], order:[], idx:0, flipped:false, filter:'all' };
 
 // ━━━ Boot ━━━
 (function init() {
-  if (!localStorage.getItem('toeicLoaded')) {
+  if (!localStorage.getItem('toeicLoaded_v2')) {
     const existing = new Set(words.map(w => w.eng.toLowerCase()));
     TOEIC_WORDS.forEach(([eng, jpn]) => {
       if (!existing.has(eng.toLowerCase()))
         words.push({ id: Date.now() + Math.random(), eng, jpn });
     });
-    localStorage.setItem('toeicLoaded', '1');
+    localStorage.setItem('toeicLoaded_v2', '1');
     save();
   }
   renderList();
@@ -551,7 +752,7 @@ function renderList() {
     return;
   }
   el.innerHTML = `<div class="word-count">${fl.length} / ${words.length}語</div>` +
-    fl.map(w => `<div class="word-card"><div style="flex:1"><div class="word-english">${esc(w.eng)}</div><div class="word-japanese">${esc(w.jpn)}</div></div><div class="word-actions"><button class="icon-btn" onclick="openModal(${w.id})">✏️</button><button class="icon-btn del" onclick="deleteWord(${w.id})">🗑️</button></div></div>`).join('');
+    fl.map(w => `<div class="word-card"><div style="flex:1"><div class="word-english">${esc(w.eng)}</div><div class="word-japanese">${esc(w.jpn)}</div></div><div class="word-actions"><button class="icon-btn" onclick="speakWord(this.dataset.word)" data-word="${esc(w.eng)}" title="発音">🔊</button><button class="icon-btn" onclick="openModal(${w.id})">✏️</button><button class="icon-btn del" onclick="deleteWord(${w.id})">🗑️</button></div></div>`).join('');
 }
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -695,7 +896,14 @@ function renderStudy() {
 }
 function updateMeaningBtn(w) {
   const shown = study.showMeaning;
-  document.getElementById('meaningText').textContent = shown ? (w && w.jpn ? w.jpn : '—') : '意味を見る';
+  const reveal = document.getElementById('meaningReveal');
+  if (shown && w) {
+    reveal.textContent = w.jpn || '—';
+    reveal.style.display = 'block';
+  } else {
+    reveal.style.display = 'none';
+  }
+  document.getElementById('meaningText').textContent = shown ? '意味を隠す' : '意味を見る';
   document.getElementById('meaningBtn').classList.toggle('shown', shown);
 }
 function toggleMeaning() { study.showMeaning = !study.showMeaning; updateMeaningBtn(curWord()); }
@@ -735,6 +943,25 @@ function toggleShuffle() {
   document.getElementById('shuffleLabel').textContent = study.shuffled ? 'シャッフルON' : 'シャッフルOFF';
   resetOrder();
   if (document.getElementById('studyTab').classList.contains('active')) { renderStudy(); clearCanvas(); }
+}
+
+// ━━━ Pronunciation ━━━
+function speakWord(word) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  var utter = new SpeechSynthesisUtterance(word);
+  utter.lang = 'en-US';
+  utter.rate = 0.85;
+  window.speechSynthesis.speak(utter);
+}
+function speakCurrent() {
+  var w = curWord();
+  if (w) speakWord(w.eng);
+}
+function speakFC() {
+  if (!fc.refs.length) return;
+  var w = fc.refs[fc.order[fc.idx]];
+  if (w) speakWord(w.eng);
 }
 
 // ━━━ Canvas Drawing ━━━
