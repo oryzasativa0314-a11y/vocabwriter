@@ -993,41 +993,41 @@ const POS_MAP = {
 
 const EXAMPLE_TEMPLATES = {
   v:[
-    {en:'We need to {w} this as soon as possible.',ja:'これをできるだけ早く行う必要があります。'},
-    {en:'Please {w} the report before the deadline.',ja:'締め切り前にレポートを処理してください。'},
-    {en:'The team decided to {w} the project.',ja:'チームはプロジェクトに取り組むことにしました。'},
-    {en:'Can you {w} this before the meeting?',ja:'会議の前にこれを対応できますか？'},
-    {en:'They agreed to {w} the proposal.',ja:'彼らは提案を実行することに合意しました。'},
+    {en:'We need to {w} this as soon as possible.',  ja:'これをできるだけ早く{j}必要があります。'},
+    {en:'Please {w} the report before the deadline.',ja:'締め切り前にレポートを{j}必要があります。'},
+    {en:'The team decided to {w} the project.',      ja:'チームはプロジェクトを{j}ことにしました。'},
+    {en:'Can you {w} this before the meeting?',      ja:'会議前にこれを{j}ことができますか？'},
+    {en:'They agreed to {w} the proposal.',          ja:'彼らは提案を{j}ことに合意しました。'},
   ],
   n:[
-    {en:'The {w} was approved by management.',ja:'経営陣がそれを承認しました。'},
-    {en:'Please review the {w} carefully.',ja:'それを注意深く確認してください。'},
-    {en:'We discussed the {w} at the meeting.',ja:'会議でそれについて話し合いました。'},
-    {en:'The {w} is due by end of the week.',ja:'今週末がそれの期限です。'},
-    {en:'Our {w} needs to be improved.',ja:'私たちのそれを改善する必要があります。'},
+    {en:'The {w} was approved by management.',  ja:'{j}が経営陣に承認されました。'},
+    {en:'Please review the {w} carefully.',     ja:'{j}を注意深く確認してください。'},
+    {en:'We discussed the {w} at the meeting.', ja:'会議で{j}について話し合いました。'},
+    {en:'The {w} is due by end of the week.',   ja:'{j}の期限は今週末です。'},
+    {en:'Our {w} needs to be improved.',        ja:'私たちの{j}を改善する必要があります。'},
   ],
   adj:[
-    {en:'This is a {w} opportunity for our company.',ja:'これは当社にとって重要な機会です。'},
-    {en:'We found a {w} solution to the problem.',ja:'問題に対する適切な解決策を見つけました。'},
-    {en:'Please make sure the data is {w}.',ja:'データが正確であることを確認してください。'},
-    {en:'The results were quite {w}.',ja:'結果は非常に重要でした。'},
-    {en:'We need a {w} approach to this issue.',ja:'この問題には適切なアプローチが必要です。'},
+    {en:'This is a {w} opportunity for our company.',ja:'これは当社にとって{j}機会です。'},
+    {en:'We need a {w} approach to this issue.',     ja:'この問題には{j}アプローチが必要です。'},
+    {en:'Please ensure {w} use of resources.',       ja:'リソースの{j}使用を徹底してください。'},
+    {en:'A {w} solution was found.',                 ja:'{j}解決策が見つかりました。'},
+    {en:'We value {w} communication in our team.',   ja:'チームでは{j}コミュニケーションを大切にしています。'},
   ],
   adv:[
-    {en:'Please complete the task {w}.',ja:'タスクを速やかに完了してください。'},
-    {en:'We need to respond {w}.',ja:'速やかに対応する必要があります。'},
-    {en:'The project progressed {w}.',ja:'プロジェクトは順調に進みました。'},
-    {en:'They {w} addressed all concerns.',ja:'彼らはすべての懸念事項に適切に対応しました。'},
-    {en:'Please review the documents {w}.',ja:'書類を迅速に確認してください。'},
+    {en:'Please complete the task {w}.',    ja:'タスクを{j}完了してください。'},
+    {en:'We need to respond {w}.',          ja:'{j}対応する必要があります。'},
+    {en:'The project progressed {w}.',      ja:'プロジェクトは{j}進みました。'},
+    {en:'They {w} addressed all concerns.', ja:'すべての懸念事項に{j}対応しました。'},
+    {en:'Please review the documents {w}.', ja:'書類を{j}確認してください。'},
   ],
   prep:[
-    {en:'This policy applies to all employees.',ja:'この方針はすべての従業員に適用されます。'},
-    {en:'We will proceed with the original plan.',ja:'元の計画で進めます。'},
+    {en:'This policy applies to all employees.', ja:'この方針はすべての従業員に適用されます。'},
+    {en:'We will proceed with the original plan.',ja:'元の計画通りに進めます。'},
   ],
   ph:[
-    {en:'Could you {w} the details for me?',ja:'詳細について対応していただけますか？'},
-    {en:"Let's {w} before the deadline.",ja:'締め切り前に対応しましょう。'},
-    {en:'We need to {w} on this matter.',ja:'この件について対応する必要があります。'},
+    {en:'Could you {w} the details?',     ja:'詳細について「{j}」していただけますか？'},
+    {en:"Let's {w} before the deadline.", ja:'締め切り前に「{j}」しましょう。'},
+    {en:'We need to {w} on this matter.', ja:'この件について「{j}」する必要があります。'},
   ],
 };
 
@@ -1262,9 +1262,10 @@ function getRandomExample(eng, pos, jpn) {
   }
   var t = EXAMPLE_TEMPLATES[pos] || EXAMPLE_TEMPLATES.n;
   var tmpl = t[Math.floor(Math.random() * t.length)];
+  var j1 = jpn ? jpn.split(/[・\/、]/)[0].trim() : eng;
   return {
     en: tmpl.en.replace(/\{w\}/g, eng),
-    ja: tmpl.ja,
+    ja: tmpl.ja.replace(/\{j\}/g, j1),
   };
 }
 function highlightWord(sentence, word) {
